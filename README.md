@@ -98,24 +98,24 @@ calculations.
 means.
 
 Secondary Requirements
-==
+===
 
-####Usability:
+#### Usability:
 
 * The system should be trivial to use for non-technical users (polling place 
 workers), and ideally require only a single button press ("power on") to 
 function as a data collector.
 
-####Efficiency:
+#### Efficiency:
 
 * The system should be able to run for an entire day on battery power.
 
-####Scalability:
+#### Scalability:
 
 * The system should be able to handle a large number of voters
   (approximately 30,000 voters in a single polling place in a single day).
 
-####Security:
+#### Security:
 
 * The system should use proper security measures and cryptography to
   establish confidence that the system is secure.
@@ -134,6 +134,7 @@ Development Instructions
 Current development on the prototype *PQM* is taking place on the Raspberry Pi
 platform. It is dependent on the following libraries, tools, and frameworks:
 
-[1] http://www.python.org/  "Python"
-[2] http://www.secdev.org/projects/scapy/  "Scapy"
+[1]: http://www.python.org/  "Python"
+
+[2]: http://www.secdev.org/projects/scapy/  "Scapy"
 
