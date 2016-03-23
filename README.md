@@ -120,7 +120,7 @@ function as a data collector.
 * The system should use proper security measures and cryptography to
   establish confidence that the system is secure.
 
-####Analysis:
+#### Analysis:
 
 * The system should be able to provide an analysis of polling place
   activity, including statistics about wait times and turnout.
@@ -134,7 +134,21 @@ Development Instructions
 Current development on the prototype *PQM* is taking place on the Raspberry Pi
 platform. It is dependent on the following libraries, tools, and frameworks:
 
-[1]: http://www.python.org/  "Python"
+* [Python] [5]
+* [Scapy] [6], for wireless packet inspection
+* [BlueZ] [7], for Bluetooth Low Energy communication
 
-[2]: http://www.secdev.org/projects/scapy/  "Scapy"
+[1]: http://research.microsoft.com/en-us/projects/contracts/  "Code Contracts library for .NET"
+
+[2]: http://www.jmlspecs.org/  "Java Modeling Language (JML)"
+
+[3]: http://bon-method.com/  "The Business Object Notation"
+
+[4]: http://frama-c.com/ "The Executable ANSI/ISO C Specification Language"
+
+[5]: http://www.python.org/ "Python"
+
+[6]: http://www.secdev.org/projects/scapy/ "Scapy"
+
+[7]: http://www.bluez.org/ "BlueZ"
 
