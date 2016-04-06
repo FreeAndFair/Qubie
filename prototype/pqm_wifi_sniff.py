@@ -10,10 +10,10 @@ import csv
 import operator
 import os
 import signal
+import threading
 import time
 from scapy.all import *
 from scapy.error import *
-from threading import *
 from watchdog.observers import Observer
 from watchdog.events import PatternMatchingEventHandler
 
@@ -22,7 +22,7 @@ MGMT_SUBTYPES = (0, 2, 4)
 UPDATE_INTERVAL = 60
 TIMEOUT_INTERVAL = 480
 
-class Sniffer(Thread):  
+class Sniffer(threading.Thread):
   def __init__(self, ifname, blacklist, whitelist, logfile, numfile, rangefile):
     super(Sniffer, self).__init__()
     
@@ -245,8 +245,9 @@ if __name__ == '__main__':
 
   try:
     sniffer.start()
+    while sniffer.running:
+      time.sleep(10)
   finally:
-    sniffer.running = False
     sniffer.join()
 
   timestruct = time.localtime(time.time())
