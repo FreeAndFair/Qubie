@@ -108,7 +108,8 @@ class Sniffer(threading.Thread):
 
   # the method to be called when this thread is signaled
   def signaled(self, signum, frame):
-    self.running = False
+    self.log('received signal {}, calling for shutdown'.format(signum))
+    self.stop()
   
   # the stop method for this thread
   def stop(self):
@@ -248,6 +249,7 @@ if __name__ == '__main__':
     while sniffer.running:
       time.sleep(10)
   finally:
+    sniffer.running = False
     sniffer.join()
 
   timestruct = time.localtime(time.time())
