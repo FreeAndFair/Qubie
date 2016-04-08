@@ -19,8 +19,6 @@ from exceptions import OSError
 from watchdog.observers import Observer
 from watchdog.events import PatternMatchingEventHandler
 
-MGMT_TYPE = 0
-MGMT_SUBTYPES = (0, 2, 4)
 UPDATE_INTERVAL = 60
 TIMEOUT_INTERVAL = 480
 
