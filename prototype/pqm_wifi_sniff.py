@@ -9,11 +9,13 @@ import binascii
 import csv
 import operator
 import os
+import pcapy
 import signal
+import struct
+import sys
 import threading
 import time
-from scapy.all import *
-from scapy.error import *
+from exceptions import OSError
 from watchdog.observers import Observer
 from watchdog.events import PatternMatchingEventHandler
 
@@ -82,12 +84,29 @@ class Sniffer(threading.Thread):
   # the run method for this thread
   def run(self):
     while self.running:
-      sniff(iface=self.ifname, prn=self.sniff_packet, timeout=30)
-    
+      try:
+        cap = pcapy.open_live(self.ifname, 1514, 1, 0)
+        while self.running:
+          (header, pkt) = cap.next()
+          if cap.datalink() == 0x7F:
+            self.sniff_packet(pkt)
+      except OSError as e:
+        self.log('error {}: {}'.format(e.errno, e.strerror))
+        self.log('waiting 10 seconds')
+        time.sleep(10)
+      except pcapy.PcapError:
+        self.log('error: {}'.format(sys.exc_info()[1]))
+        self.log('waiting 10 seconds')
+        time.sleep(10)
+      except:
+        self.log('unexpected error: {}'.format(sys.exc_info()))
+        self.running = False
+
     self.log('shutting down')
     
     for m in sorted(self.firsts.keys()):
-      self.log('mac {} present for {} minutes at shutdown'.format(m, int((self.lasts[m] - self.firsts[m]) // 60)))
+      self.log('mac {} present for {} minutes at shutdown'.
+               format(m, int((self.lasts[m] - self.firsts[m]) // 60)))
       self.past_ranges.append((m, self.firsts[m], self.lasts[m]))
       if self.rangewriter != None:
         self.rangewriter.writerow({'device': m,
@@ -130,7 +149,8 @@ class Sniffer(threading.Thread):
 
   # log a message, to either the console or the log file
   def log(self, msg):
-    timestamp = time.strftime('[%Y-%m-%d %H:%M:%S %Z]', time.localtime(time.time()))
+    timestamp = time.strftime('[%Y-%m-%d %H:%M:%S %Z]',
+                              time.localtime(time.time()))
     entry = '{}: {}'.format(timestamp, msg)
     if self.logfile != None:
       self.logfile.write(entry)
@@ -138,54 +158,62 @@ class Sniffer(threading.Thread):
     else:
       print entry
                                               
-  # records a packet and its timestamp if it's a WiFi management packet
+  # updates our list of devices in proximity, based on the specified
+  # packet being received
   def sniff_packet(self, p):
-    # if it's a management packet, let's get its mac address and register
-    # it as seen at this time
-    mac = None
-    if p.haslayer(Dot11):
-      mac = p.addr2
-      if mac != None:
-        macbytes = binascii.unhexlify(mac.replace(b':', b''))
-        mac = mac.lower().replace(":","")
-        rssi = -(256-ord(p.notdecoded[-4:-3]))
-        allowed = True
-        
-        if (ord(macbytes[0]) & 0x02 > 0):
-          if not mac in self.locally_managed_macs:
-            self.locally_managed_macs.add(mac)
-            timestruct = time.localtime(p.time)
-            self.log('locally-managed mac {} appeared'.format(mac))
-          allowed = False
-        elif self.disallowed(mac):
-          if not mac in self.disallowed_macs:
-            self.disallowed_macs.add(mac)
-            timestruct = time.localtime(p.time)
-            self.log('disallowed mac {} appeared'.format(mac))
-          allowed = False
-        elif mac not in self.firsts:
-          self.firsts[mac] = p.time
-          timestruct = time.localtime(p.time)
-          self.log('mac {} appeared, RSSI {}\n'.format(mac, rssi))
-        elif (p.time - self.lasts[mac] > UPDATE_INTERVAL): 
-          timestruct = time.localtime(p.time)
-          first_timestruct = time.localtime(self.firsts[mac])
-          self.log('mac {} has been here {} minutes, RSSI {}'.format(mac, int((p.time - self.firsts[mac]) // 60), rssi))
-        
-        if allowed:
-          self.lasts[mac] = p.time
-                    
-    # now, update the list of macs in proximity based on our timeout interval
+    rtlen = struct.unpack('h', p[2:4])[0]
+    rtap = p[:rtlen]
+    rssi = struct.unpack("b", rtap[-4:-3])[0]
+    frame = p[rtlen:]
+    mac = frame[10:16].encode('hex')
+
+    # check for bad "mac" addresses
+    if len(mac) < 12:
+      return
+
+    allowed = True
+    capture_time = time.time()
+    
+    if (ord(frame[10]) & 0x02 > 0):
+      if not mac in self.locally_managed_macs:
+        self.locally_managed_macs.add(mac)
+        self.log('locally-managed mac {} appeared'.format(mac))
+      allowed = False
+    elif self.disallowed(mac):
+      if not mac in self.disallowed_macs:
+        self.disallowed_macs.add(mac)
+        self.log('disallowed mac {} appeared'.format(mac))
+      allowed = False
+    elif mac not in self.firsts:
+      self.log('mac {} appeared, RSSI {}'.format(mac, rssi))
+      self.firsts[mac] = capture_time
+    elif (capture_time - self.lasts[mac] > UPDATE_INTERVAL):
+      first_timestruct = time.localtime(self.firsts[mac])
+      self.log('mac {} has been here {} minutes, RSSI {}'.
+               format(mac, int((capture_time - self.firsts[mac]) // 60), rssi))
+    
+    if allowed:
+      self.lasts[mac] = capture_time
+    
+    # do a list update
+    self.update_device_lists()
+
+
+  # update the lists of devices in proximity based on our
+  # update and timeout intervals
+  def update_device_lists(self):
     if (time.time() - self.last_update > UPDATE_INTERVAL):
       self.last_update = time.time()
       timestruct = time.localtime(self.last_update)
       if self.numwriter != None:
-        self.numwriter.writerow({'time': int(round(self.last_update - start_time)) / 60,
+        self.numwriter.writerow({'time': int(round(self.last_update -
+                                                   start_time)) / 60,
                                  'num_devices': len(self.firsts)})
       self.log('{} devices assumed to be present'.format(len(self.firsts)))
       for m in sorted(self.firsts.keys()):
         if time.time() - self.lasts[m] > TIMEOUT_INTERVAL:
-          self.log('mac {} disappeared after {} minutes\n'.format(m, int((self.lasts[m] - self.firsts[m]) // 60)))
+          self.log('mac {} disappeared after {} minutes\n'.
+                   format(m, int((self.lasts[m] - self.firsts[m]) // 60)))
           self.past_ranges.append((m, self.firsts[m], self.lasts[m]))
           if self.rangewriter != None:
             self.rangewriter.writerow({'device': m,
@@ -193,7 +221,7 @@ class Sniffer(threading.Thread):
                                        'end_time': self.lasts[m]})
           self.firsts.pop(m, None)
           self.lasts.pop(m, None)
-        
+
 # the main body of the program
 
 # reads lists of OUIs from either a single CSV file or
@@ -220,7 +248,7 @@ def read_oui_list(l):
         try:
           macreader = csv.DictReader(f)
           for row in macreader:
-            maclist.add(row['Assignment'])
+            maclist.add(row['Assignment'].lower())
         except csv.Error:
           print "Error reading from OUI data file {}.".format(filename)
 
@@ -240,8 +268,9 @@ if __name__ == '__main__':
   parser.add_argument('-r', '--rangefile', metavar='rangefile')
   args = parser.parse_args()
   
-  sniffer = Sniffer(args.interface, read_oui_list(args.blacklist), read_oui_list(args.whitelist),
-                    args.logfile, args.numfile, args.rangefile)
+  sniffer = Sniffer(args.interface, read_oui_list(args.blacklist),
+                    read_oui_list(args.whitelist), args.logfile,
+                    args.numfile, args.rangefile)
   start_time = time.time()
 
   try:
