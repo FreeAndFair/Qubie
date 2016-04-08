@@ -212,7 +212,7 @@ class Sniffer(threading.Thread):
       self.log('{} devices assumed to be present'.format(len(self.firsts)))
       for m in sorted(self.firsts.keys()):
         if time.time() - self.lasts[m] > TIMEOUT_INTERVAL:
-          self.log('mac {} disappeared after {} minutes\n'.
+          self.log('mac {} disappeared after {} minutes'.
                    format(m, int((self.lasts[m] - self.firsts[m]) // 60)))
           self.past_ranges.append((m, self.firsts[m], self.lasts[m]))
           if self.rangewriter != None:
