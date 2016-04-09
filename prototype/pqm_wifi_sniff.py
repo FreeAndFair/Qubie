@@ -33,10 +33,11 @@ class Sniffer(threading.Thread):
     # initialize variables
     self.firsts = {}
     self.lasts = {}
+    self.min_rssis = {}
+    self.max_rssis = {}
     self.disallowed_macs = set()
     self.locally_managed_macs = set()
-    self.past_ranges = []
-    self.past_num_devices = []
+    #self.past_ranges = []
     self.last_update = time.time()
     self.running = True
     self.ifname = ifname
@@ -73,7 +74,8 @@ class Sniffer(threading.Thread):
     if rangefile != None:
       try:
         self.rangefile = open(rangefile, 'w', 1)
-        self.rangewriter = csv.DictWriter(self.rangefile, fieldnames=['device','start_time','end_time'])
+        self.rangewriter = csv.DictWriter(self.rangefile,
+                                          fieldnames=['device', 'start_time', 'end_time', 'min_rssi', 'max_rssi'])
         self.rangewriter.writeheader()
       except IOError:
         self.log('could not open device presence range file {}, proceeding without it'.format(rangefile))
@@ -103,13 +105,16 @@ class Sniffer(threading.Thread):
     self.log('shutting down')
     
     for m in sorted(self.firsts.keys()):
-      self.log('mac {} present for {} minutes at shutdown'.
-               format(m, int((self.lasts[m] - self.firsts[m]) // 60)))
-      self.past_ranges.append((m, self.firsts[m], self.lasts[m]))
+      self.log('mac {} present for {} minutes at shutdown, min RSSI {}, max RSSI {}'.
+               format(m, int((self.lasts[m] - self.firsts[m]) // 60),
+                      self.min_rssis[m], self.max_rssis[m]))
+      #self.past_ranges.append((m, self.firsts[m], self.lasts[m], self.min_rssis[m], self.max_rssis[m]))
       if self.rangewriter != None:
         self.rangewriter.writerow({'device': m,
                                    'start_time': self.firsts[m],
-                                   'end_time': self.lasts[m]})
+                                   'end_time': self.lasts[m],
+                                   'min_rssi': self.min_rssis[m],
+                                   'max_rssi': self.max_rssis[m]})
       self.firsts.pop(m, None)
       self.lasts.pop(m, None)
 
@@ -185,6 +190,8 @@ class Sniffer(threading.Thread):
     elif mac not in self.firsts:
       self.log('mac {} appeared, RSSI {}'.format(mac, rssi))
       self.firsts[mac] = capture_time
+      self.min_rssis[mac] = rssi
+      self.max_rssis[mac] = rssi
     elif (capture_time - self.lasts[mac] > UPDATE_INTERVAL):
       first_timestruct = time.localtime(self.firsts[mac])
       self.log('mac {} has been here {} minutes, RSSI {}'.
@@ -192,7 +199,11 @@ class Sniffer(threading.Thread):
     
     if allowed:
       self.lasts[mac] = capture_time
-    
+      if rssi < self.min_rssis[mac]:
+        self.min_rssis[mac] = rssi
+      if self.max_rssis[mac] < rssi:
+        self.max_rssis[mac] = rssi
+
     # do a list update
     self.update_device_lists()
 
@@ -210,15 +221,20 @@ class Sniffer(threading.Thread):
       self.log('{} devices assumed to be present'.format(len(self.firsts)))
       for m in sorted(self.firsts.keys()):
         if time.time() - self.lasts[m] > TIMEOUT_INTERVAL:
-          self.log('mac {} disappeared after {} minutes'.
-                   format(m, int((self.lasts[m] - self.firsts[m]) // 60)))
-          self.past_ranges.append((m, self.firsts[m], self.lasts[m]))
+          self.log('mac {} disappeared after {} minutes, min RSSI {}, max RSSI {}'.
+                   format(m, int((self.lasts[m] - self.firsts[m]) // 60),
+                          self.min_rssis[m], self.max_rssis[m]))
+          #self.past_ranges.append((m, self.firsts[m], self.lasts[m]))
           if self.rangewriter != None:
             self.rangewriter.writerow({'device': m,
                                        'start_time': self.firsts[m],
-                                       'end_time': self.lasts[m]})
+                                       'end_time': self.lasts[m],
+                                       'min_rssi': self.min_rssis[m],
+                                       'max_rssi': self.max_rssis[m]})
           self.firsts.pop(m, None)
           self.lasts.pop(m, None)
+          self.min_rssis.pop(m, None)
+          self.max_rssis.pop(m, None)
 
 # the main body of the program
 
