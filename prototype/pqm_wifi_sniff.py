@@ -7,9 +7,11 @@
 import argparse
 import binascii
 import csv
-import operator
+import hashlib
+import hmac
 import os
 import pcapy
+import random
 import signal
 import struct
 import sys
@@ -19,11 +21,26 @@ from exceptions import OSError
 from watchdog.observers import Observer
 from watchdog.events import PatternMatchingEventHandler
 
-UPDATE_INTERVAL = 60
-TIMEOUT_INTERVAL = 480
+# SYMBOLIC CONSTANTS
 
+# the interval at which the proximity statistics will be updated
+UPDATE_INTERVAL = 60
+
+# the interval between sightings of a device before that device is
+# considered to be out of proximity
+PROXIMITY_TIMEOUT = 31 * 60
+
+# the maximum number of bytes to capture per packet
+MAX_CAPTURE_BYTES_PER_PACKET = 1514
+
+# the timeout on capturing a single packet
+CAPTURE_TIMEOUT = 0
+
+
+# class Sniffer - extends Thread and runs the actual sniffing, including
+# tracking of devices in proximity and statistics about their presence/absence
 class Sniffer(threading.Thread):
-  def __init__(self, ifname, blacklist, whitelist, logfile, numfile, rangefile):
+  def __init__(self, args):
     super(Sniffer, self).__init__()
     
     # initialize signal handler
@@ -35,61 +52,101 @@ class Sniffer(threading.Thread):
     self.lasts = {}
     self.min_rssis = {}
     self.max_rssis = {}
+    self.hashes = {}
     self.disallowed_macs = set()
     self.locally_managed_macs = set()
     #self.past_ranges = []
     self.last_update = time.time()
     self.running = True
-    self.ifname = ifname
-    self.blacklist = blacklist
-    self.whitelist = whitelist
+    self.interface = args.interface
+    self.blacklist = read_oui_list(args.blacklist)
+    self.whitelist = read_oui_list(args.whitelist)
     self.using_whitelist = len(self.whitelist) > 0
+    
     self.logfile = None
-    if logfile != None:
+    if args.logfile != None:
       try:
-        self.logfile = open(logfile, 'a', 1)
+        self.logfile = open(args.logfile, 'a', 1)
         self.logfile.write('\n---NEW RUN---\n')
       except IOError:
         print('could not open log file {}, proceeding with no log file'.format(logfile))
         self.logfile = None
-    self.log('started listening on interface {}'.format(self.ifname))
+    self.log('started listening on interface {}'.format(self.interface))
     if self.using_whitelist:
       self.log('whitelist contains {} OUIs'.format(len(self.whitelist)))
     elif len(self.blacklist) > 0:
       self.log('blacklist contains {} OUIs'.format(len(self.blacklist)))
     else:
       self.log('accepting all OUIs')
-    self.numfile = None
-    self.numwriter = None
-    if numfile != None:
+    
+    self.countfile = None
+    self.countwriter = None
+    if args.countfile != None:
       try:
-        self.numfile = open(numfile, 'w', 1)
-        self.numwriter = csv.DictWriter(self.numfile, fieldnames=['time', 'num_devices'])
-        self.numwriter.writeheader()
+        self.countfile = open(args.countfile, 'w', 1)
+        self.countwriter = csv.DictWriter(self.countfile, fieldnames=['time', 'num_devices'])
+        self.countwriter.writeheader()
       except IOError:
-        self.log('could not open number of devices per unit time file {}, proceeding without it'.format(numfile))
-        self.numfile = None
+        self.log('could not device count file {}, proceeding without it'.format(numfile))
+        self.countfile = None
+      
     self.rangefile = None
     self.rangewriter = None
-    if rangefile != None:
+    if args.rangefile != None:
       try:
-        self.rangefile = open(rangefile, 'w', 1)
+        self.rangefile = open(args.rangefile, 'w', 1)
         self.rangewriter = csv.DictWriter(self.rangefile,
                                           fieldnames=['device', 'start_time', 'end_time', 'min_rssi', 'max_rssi'])
         self.rangewriter.writeheader()
       except IOError:
-        self.log('could not open device presence range file {}, proceeding without it'.format(rangefile))
+        self.log('could not open device presence time range file {}, proceeding without it'.format(rangefile))
         self.rangefile = None
-        
+          
+    self.contactfile = None
+    self.contactwriter = None
+    if args.contactfile != None:
+      try:
+        self.contactfile = open(args.contactfile, 'w', 1)
+        self.contactwriter = csv.DictWriter(self.contactfile,
+                                            fieldnames=['device', 'time', 'rssi'])
+        self.contactwriter.writeheader()
+      except IOError:
+        self.log('could not open contact file {}, proceeding without it'.format(contactfile))
+        self.contactfile = None
+
+    self.hashfile = None
+    self.hashwriter = None
+    if args.hashfile != None:
+      try:
+        self.hashfile = open(args.hashfile, 'w', 1)
+        self.hashwriter = csv.DictWriter(self.hashfile,
+                                         fieldnames=['mac', 'hash', 'locally_managed', 'disallowed'])
+        self.hashwriter.writeheader()
+      except IOError:
+        self.log('could not open device hash file {}, proceeding without it'.format(hashfile))
+        self.hashfile = None
+
+    self.encrypted = args.encrypted
+    self.key = ''
+    if self.encrypted:
+      self.key = '%064x' % random.SystemRandom().getrandbits(256)
+      self.log('generated key for MAC address hashing')
+
+    self.mindelay = args.mindelay
+      
   # the run method for this thread
   def run(self):
     while self.running:
       try:
-        cap = pcapy.open_live(self.ifname, 1514, 1, 0)
+        cap = pcapy.open_live(self.interface, MAX_CAPTURE_BYTES_PER_PACKET,
+                              True, CAPTURE_TIMEOUT)
+        if cap.datalink() != 0x7F:  # 0x7F == 127 == RadioTap
+          self.log('error: data link type is {}, expected 127 (RadioTap)'.format(cap.datalink()))
+          self.running = False
+          break
         while self.running:
           (header, pkt) = cap.next()
-          if cap.datalink() == 0x7F:
-            self.sniff_packet(pkt)
+          self.sniff_packet(pkt)
       except OSError as e:
         self.log('error {}: {}'.format(e.errno, e.strerror))
         self.log('waiting 10 seconds')
@@ -108,7 +165,6 @@ class Sniffer(threading.Thread):
       self.log('mac {} present for {} minutes at shutdown, min RSSI {}, max RSSI {}'.
                format(m, int((self.lasts[m] - self.firsts[m]) // 60),
                       self.min_rssis[m], self.max_rssis[m]))
-      #self.past_ranges.append((m, self.firsts[m], self.lasts[m], self.min_rssis[m], self.max_rssis[m]))
       if self.rangewriter != None:
         self.rangewriter.writerow({'device': m,
                                    'start_time': self.firsts[m],
@@ -121,9 +177,9 @@ class Sniffer(threading.Thread):
     if self.logfile != None:
       self.logfile.flush()
       os.fsync(self.logfile)
-    if self.numfile != None:
-      self.numfile.flush()
-      os.fsync(self.numfile)
+    if self.countfile != None:
+      self.countfile.flush()
+      os.fsync(self.countfile)
     if self.rangefile != None:
       self.rangefile.flush()
       os.fsync(self.rangefile)
@@ -174,35 +230,57 @@ class Sniffer(threading.Thread):
     if len(mac) < 12:
       return
 
-    allowed = True
     capture_time = time.time()
     
-    if (ord(frame[10]) & 0x02 > 0):
-      if not mac in self.locally_managed_macs:
-        self.locally_managed_macs.add(mac)
-        self.log('locally-managed mac {} appeared'.format(mac))
-      allowed = False
-    elif self.disallowed(mac):
-      if not mac in self.disallowed_macs:
-        self.disallowed_macs.add(mac)
-        self.log('disallowed mac {} appeared'.format(mac))
-      allowed = False
-    elif mac not in self.firsts:
-      self.log('mac {} appeared, RSSI {}'.format(mac, rssi))
-      self.firsts[mac] = capture_time
-      self.min_rssis[mac] = rssi
-      self.max_rssis[mac] = rssi
-    elif (capture_time - self.lasts[mac] > UPDATE_INTERVAL):
-      first_timestruct = time.localtime(self.firsts[mac])
-      self.log('mac {} has been here {} minutes, RSSI {}'.
-               format(mac, int((capture_time - self.firsts[mac]) // 60), rssi))
+    # if we're running in encrypted mode, we need to hash the MAC;
+    # otherwise, we just use it as is
+    hashed_mac = mac
+    disallowed = self.disallowed(mac)
+    locally_managed = ord(frame[10]) & 0x02 > 0
     
-    if allowed:
-      self.lasts[mac] = capture_time
-      if rssi < self.min_rssis[mac]:
-        self.min_rssis[mac] = rssi
-      if self.max_rssis[mac] < rssi:
-        self.max_rssis[mac] = rssi
+    if self.encrypted:
+      if not mac in self.hashes:
+        mac_hmac = hmac.new(self.key, mac, hashlib.md5)
+        hashed_mac = mac_hmac.hexdigest()
+        self.hashes[mac] = hashed_mac
+        if self.hashwriter != None:
+          self.log('hashed mac {} to {}'.format(mac, hashed_mac))
+          self.hashwriter.writerow({'mac': mac,
+                                    'hash': self.hashes[mac],
+                                    'locally_managed': locally_managed,
+                                    'disallowed': disallowed})
+      hashed_mac = self.hashes[mac]
+      
+    if locally_managed:
+      if not hashed_mac in self.locally_managed_macs:
+        self.locally_managed_macs.add(hashed_mac)
+        self.log('locally-managed device {} appeared'.format(hashed_mac))
+    elif disallowed:
+      if not hashed_mac in self.disallowed_macs:
+        self.disallowed_macs.add(hashed_mac)
+        self.log('disallowed device {} appeared'.format(hashed_mac))
+      allowed = False
+    elif hashed_mac not in self.firsts:
+      self.log('device {} appeared, RSSI {}'.format(hashed_mac, rssi))
+      self.firsts[hashed_mac] = capture_time
+      self.min_rssis[hashed_mac] = rssi
+      self.max_rssis[hashed_mac] = rssi
+   #elif (capture_time - self.lasts[hashed_mac] > UPDATE_INTERVAL):
+    elif (capture_time - self.lasts[hashed_mac] >= self.mindelay):
+      first_timestruct = time.localtime(self.firsts[hashed_mac])
+      if self.contactwriter != None:
+        self.contactwriter.writerow({'device': hashed_mac,
+                                     'time': capture_time,
+                                     'rssi': rssi})
+      self.log('device {} has been here {} minutes, RSSI {}'.
+               format(hashed_mac, int((capture_time - self.firsts[hashed_mac]) // 60), rssi))
+    
+    if not locally_managed and not disallowed:
+      self.lasts[hashed_mac] = capture_time
+      if rssi < self.min_rssis[hashed_mac]:
+        self.min_rssis[hashed_mac] = rssi
+      if self.max_rssis[hashed_mac] < rssi:
+        self.max_rssis[hashed_mac] = rssi
 
     # do a list update
     self.update_device_lists()
@@ -214,17 +292,16 @@ class Sniffer(threading.Thread):
     if (time.time() - self.last_update > UPDATE_INTERVAL):
       self.last_update = time.time()
       timestruct = time.localtime(self.last_update)
-      if self.numwriter != None:
-        self.numwriter.writerow({'time': int(round(self.last_update -
-                                                   start_time)) / 60,
-                                 'num_devices': len(self.firsts)})
+      if self.countwriter != None:
+        self.countwriter.writerow({'time': int(round(self.last_update -
+                                                     start_time)) / 60,
+                                   'num_devices': len(self.firsts)})
       self.log('{} devices assumed to be present'.format(len(self.firsts)))
       for m in sorted(self.firsts.keys()):
-        if time.time() - self.lasts[m] > TIMEOUT_INTERVAL:
+        if time.time() - self.lasts[m] > PROXIMITY_TIMEOUT:
           self.log('mac {} disappeared after {} minutes, min RSSI {}, max RSSI {}'.
                    format(m, int((self.lasts[m] - self.firsts[m]) // 60),
                           self.min_rssis[m], self.max_rssis[m]))
-          #self.past_ranges.append((m, self.firsts[m], self.lasts[m]))
           if self.rangewriter != None:
             self.rangewriter.writerow({'device': m,
                                        'start_time': self.firsts[m],
@@ -275,16 +352,26 @@ if __name__ == '__main__':
   parser = argparse.ArgumentParser(description='Detect the number of nearby wireless devices over time.')
   parser.add_argument('-i', '--interface', metavar='interface', default='wlan0')
   group = parser.add_mutually_exclusive_group()
-  group.add_argument('-b', '--blacklist', metavar='blacklist')
-  group.add_argument('-w', '--whitelist', metavar='whitelist')
-  parser.add_argument('-l', '--logfile', metavar='logfile')
-  parser.add_argument('-n', '--numfile', metavar='numfile')
-  parser.add_argument('-r', '--rangefile', metavar='rangefile')
-  args = parser.parse_args()
+  group.add_argument('-b', '--blacklist', metavar='blacklist',
+                     help='path to the OUI blacklist file or directory')
+  group.add_argument('-w', '--whitelist', metavar='whitelist',
+                     help='path to the OUI whitelist file or directory')
+  parser.add_argument('-l', '--logfile', metavar='logfile',
+                      help='path to the log output file')
+  parser.add_argument('-c', '--countfile', metavar='countfile',
+                      help='path to the device count output file')
+  parser.add_argument('-r', '--rangefile', metavar='rangefile',
+                      help='path to the device presence time range output file')
+  parser.add_argument('-C', '--contactfile', metavar='contactfile',
+                      help='path to the device contact output file')
+  parser.add_argument('-H', '--hashfile', metavar='hashfile',
+                      help='path to the device MAC hash output file')
+  parser.add_argument('-e', '--encrypted', action='store_true',
+                      help='encrypt the detected MAC addresses')
+  parser.add_argument('-m', '--mindelay', metavar='mindelay', type=int, default=0,
+                      help='minimum number of seconds between recording contacts from the same device')
   
-  sniffer = Sniffer(args.interface, read_oui_list(args.blacklist),
-                    read_oui_list(args.whitelist), args.logfile,
-                    args.numfile, args.rangefile)
+  sniffer = Sniffer(parser.parse_args())
   start_time = time.time()
 
   try:

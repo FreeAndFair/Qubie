@@ -14,7 +14,7 @@ interface="wlan1"
 logsuffix=`date +"%Y%m%d_%H%M"`
 
 monitorcmd="iwconfig $interface mode monitor"
-cmd="/usr/local/sbin/pqm_wifi_sniff.py -i $interface -w whitelist-ouis -l $dir/log/pqm-$logsuffix.log -n $dir/stats/num-$logsuffix.csv -r $dir/stats/range-$logsuffix.csv"
+cmd="/usr/local/sbin/pqm_wifi_sniff.py -i $interface -w whitelist-ouis -l $dir/log/pqm-$logsuffix.log -c $dir/stats/num-$logsuffix.csv -r $dir/stats/range-$logsuffix.csv -H $dir/stats/hashes-$logsuffix.csv -C $dir/stats/contacts-$logsuffix.csv -e"
 user=""
 
 name=`basename $0`
