@@ -12,8 +12,10 @@ import hmac
 import os
 import pcapy
 import random
+import re
 import signal
 import struct
+import subprocess
 import sys
 import threading
 import time
@@ -36,11 +38,93 @@ MAX_CAPTURE_BYTES_PER_PACKET = 1514
 # the timeout on capturing a single packet
 CAPTURE_TIMEOUT = 0
 
+# the amount of time to stay on each channel, if scanning
+SCAN_CHANNEL_TIME = 5
+
+# class Logger - logs output to a file
+class Logger():
+  def __init__(self, logfile):
+    # initialize variables
+
+    self.logfile = None
+    if logfile != None:
+      try:
+        self.logfile = open(args.logfile, 'a', 1)
+        self.logfile.write('\n---NEW RUN---\n')
+      except IOError:
+        print('could not open log file {}, proceeding with no log file'.format(logfile))
+        self.logfile = None
+
+  # log a message, to either the console or the log file
+  def log(self, msg):
+    timestamp = time.strftime('[%Y-%m-%d %H:%M:%S %Z]',
+                              time.localtime(time.time()))
+    entry = '{}: {}'.format(timestamp, msg)
+    if self.logfile != None:
+      self.logfile.write(entry)
+      self.logfile.write('\n')
+
+    else:
+      print entry
+
+  # flushes the logfile (if any)
+  def flush(self):
+    if self.logfile != None:
+      self.logfile.flush()
+      os.fsync(self.logfile)
+
+
+# class Scanner - switches the wifi channel on the specified interface among
+# the specified list of channels to scan, continuously, until told to stop
+class Scanner(threading.Thread):
+  def __init__(self, args, logger):
+    super(Scanner, self).__init__()
+
+    # initialize variables
+    self.scanchannels = args.scanchannels
+    self.interface = args.interface
+    self.logger = logger
+    self.running = False
+
+  # the run method for this thread
+  def run(self):
+    # if we don't need to scan, we don't need to run
+    if not self.scanchannels:
+      return
+
+    # attempt to create the channel list
+    channel_list = []
+    try:
+      listproc = subprocess.Popen(['iwlist', self.interface, 'channel'], stdout=subprocess.PIPE)
+      for line in listproc.communicate()[0].split('\n'):
+        if 'Channel' in line and not 'Frequency' in line:
+          channel_list.append(re.findall(r'\d+', line)[0])
+    except:
+      logger.log('error getting wifi channel list, not scanning')
+      return
+    logger.log('available wifi channels: {}'.format(channel_list))
+    
+    # with more than 1 channel, we scan in the order provided
+    self.running = True
+    while (self.running):
+      for channel in channel_list:
+        try:
+          subprocess.call(['iwconfig', self.interface, 'channel', channel])
+          logger.log('wifi switched to channel {}'.format(channel))
+        except:
+          logger.log('wifi could not switch to channel {}'.format(channel))
+        time.sleep(SCAN_CHANNEL_TIME)
+        if not self.running:
+          break
+
+  # the stop method for this thread
+  def stop(self):
+    self.running = False
 
 # class Sniffer - extends Thread and runs the actual sniffing, including
 # tracking of devices in proximity and statistics about their presence/absence
 class Sniffer(threading.Thread):
-  def __init__(self, args):
+  def __init__(self, args, logger):
     super(Sniffer, self).__init__()
     
     # initialize signal handler
@@ -48,6 +132,7 @@ class Sniffer(threading.Thread):
     signal.signal(signal.SIGTERM, self.signaled)
     
     # initialize variables
+    self.logger = logger
     self.firsts = {}
     self.lasts = {}
     self.min_rssis = {}
@@ -55,29 +140,20 @@ class Sniffer(threading.Thread):
     self.hashes = {}
     self.disallowed_macs = set()
     self.locally_managed_macs = set()
-    #self.past_ranges = []
     self.last_update = time.time()
-    self.running = True
+    self.running = False
     self.interface = args.interface
     self.blacklist = read_oui_list(args.blacklist)
     self.whitelist = read_oui_list(args.whitelist)
     self.using_whitelist = len(self.whitelist) > 0
-    
-    self.logfile = None
-    if args.logfile != None:
-      try:
-        self.logfile = open(args.logfile, 'a', 1)
-        self.logfile.write('\n---NEW RUN---\n')
-      except IOError:
-        print('could not open log file {}, proceeding with no log file'.format(logfile))
-        self.logfile = None
-    self.log('started listening on interface {}'.format(self.interface))
+
+    logger.log('started listening on interface {}'.format(self.interface))
     if self.using_whitelist:
-      self.log('whitelist contains {} OUIs'.format(len(self.whitelist)))
+      logger.log('whitelist contains {} OUIs'.format(len(self.whitelist)))
     elif len(self.blacklist) > 0:
-      self.log('blacklist contains {} OUIs'.format(len(self.blacklist)))
+      logger.log('blacklist contains {} OUIs'.format(len(self.blacklist)))
     else:
-      self.log('accepting all OUIs')
+      logger.log('accepting all OUIs')
     
     self.countfile = None
     self.countwriter = None
@@ -87,7 +163,7 @@ class Sniffer(threading.Thread):
         self.countwriter = csv.DictWriter(self.countfile, fieldnames=['time', 'num_devices'])
         self.countwriter.writeheader()
       except IOError:
-        self.log('could not device count file {}, proceeding without it'.format(numfile))
+        logger.log('could not device count file {}, proceeding without it'.format(numfile))
         self.countfile = None
       
     self.rangefile = None
@@ -99,7 +175,7 @@ class Sniffer(threading.Thread):
                                           fieldnames=['device', 'start_time', 'end_time', 'min_rssi', 'max_rssi'])
         self.rangewriter.writeheader()
       except IOError:
-        self.log('could not open device presence time range file {}, proceeding without it'.format(rangefile))
+        logger.log('could not open device presence time range file {}, proceeding without it'.format(rangefile))
         self.rangefile = None
           
     self.contactfile = None
@@ -108,10 +184,10 @@ class Sniffer(threading.Thread):
       try:
         self.contactfile = open(args.contactfile, 'w', 1)
         self.contactwriter = csv.DictWriter(self.contactfile,
-                                            fieldnames=['device', 'time', 'rssi'])
+                                            fieldnames=['device', 'time', 'rssi', 'frequency'])
         self.contactwriter.writeheader()
       except IOError:
-        self.log('could not open contact file {}, proceeding without it'.format(contactfile))
+        logger.log('could not open contact file {}, proceeding without it'.format(contactfile))
         self.contactfile = None
 
     self.hashfile = None
@@ -123,46 +199,47 @@ class Sniffer(threading.Thread):
                                          fieldnames=['mac', 'hash', 'locally_managed', 'disallowed'])
         self.hashwriter.writeheader()
       except IOError:
-        self.log('could not open device hash file {}, proceeding without it'.format(hashfile))
+        logger.log('could not open device hash file {}, proceeding without it'.format(hashfile))
         self.hashfile = None
 
     self.encrypted = args.encrypted
     self.key = ''
     if self.encrypted:
       self.key = '%064x' % random.SystemRandom().getrandbits(256)
-      self.log('generated key for MAC address hashing')
+      logger.log('generated key for MAC address hashing')
 
     self.mindelay = args.mindelay
       
   # the run method for this thread
   def run(self):
+    self.running = True
     while self.running:
       try:
         cap = pcapy.open_live(self.interface, MAX_CAPTURE_BYTES_PER_PACKET,
                               True, CAPTURE_TIMEOUT)
         if cap.datalink() != 0x7F:  # 0x7F == 127 == RadioTap
-          self.log('error: data link type is {}, expected 127 (RadioTap)'.format(cap.datalink()))
+          logger.log('error: data link type is {}, expected 127 (RadioTap)'.format(cap.datalink()))
           self.running = False
           break
         while self.running:
           (header, pkt) = cap.next()
           self.sniff_packet(pkt)
       except OSError as e:
-        self.log('error {}: {}'.format(e.errno, e.strerror))
-        self.log('waiting 10 seconds')
+        logger.log('error {}: {}'.format(e.errno, e.strerror))
+        logger.log('waiting 10 seconds')
         time.sleep(10)
       except pcapy.PcapError:
-        self.log('error: {}'.format(sys.exc_info()[1]))
-        self.log('waiting 10 seconds')
+        logger.log('error: {}'.format(sys.exc_info()[1]))
+        logger.log('waiting 10 seconds')
         time.sleep(10)
       except:
-        self.log('unexpected error: {}'.format(sys.exc_info()))
+        logger.log('unexpected error: {}'.format(sys.exc_info()))
         self.running = False
 
-    self.log('shutting down')
+    logger.log('shutting down')
     
     for m in sorted(self.firsts.keys()):
-      self.log('mac {} present for {} minutes at shutdown, min RSSI {}, max RSSI {}'.
+      logger.log('mac {} present for {} minutes at shutdown, min RSSI {}, max RSSI {}'.
                format(m, int((self.lasts[m] - self.firsts[m]) // 60),
                       self.min_rssis[m], self.max_rssis[m]))
       if self.rangewriter != None:
@@ -174,9 +251,6 @@ class Sniffer(threading.Thread):
       self.firsts.pop(m, None)
       self.lasts.pop(m, None)
 
-    if self.logfile != None:
-      self.logfile.flush()
-      os.fsync(self.logfile)
     if self.countfile != None:
       self.countfile.flush()
       os.fsync(self.countfile)
@@ -186,7 +260,7 @@ class Sniffer(threading.Thread):
 
   # the method to be called when this thread is signaled
   def signaled(self, signum, frame):
-    self.log('received signal {}, calling for shutdown'.format(signum))
+    logger.log('received signal {}, calling for shutdown'.format(signum))
     self.stop()
   
   # the stop method for this thread
@@ -205,23 +279,23 @@ class Sniffer(threading.Thread):
     if mac[:6] in self.whitelist:
       return False
     return self.using_whitelist
-
-  # log a message, to either the console or the log file
-  def log(self, msg):
-    timestamp = time.strftime('[%Y-%m-%d %H:%M:%S %Z]',
-                              time.localtime(time.time()))
-    entry = '{}: {}'.format(timestamp, msg)
-    if self.logfile != None:
-      self.logfile.write(entry)
-      self.logfile.write('\n')
-    else:
-      print entry
-                                              
+  
   # updates our list of devices in proximity, based on the specified
   # packet being received
   def sniff_packet(self, p):
     rtlen = struct.unpack('h', p[2:4])[0]
+
+    # check for bad RadioTap headers
+    if rtlen < 18:
+      return
+    
     rtap = p[:rtlen]
+    frequency = (struct.unpack("I", rtap[-8:-4])[0] & 0x0000FFFF)
+
+    # check for bad frequencies
+    if frequency < 2400 or frequency > 6000:
+      return
+        
     rssi = struct.unpack("b", rtap[-4:-3])[0]
     frame = p[rtlen:]
     mac = frame[10:16].encode('hex')
@@ -244,7 +318,7 @@ class Sniffer(threading.Thread):
         hashed_mac = mac_hmac.hexdigest()
         self.hashes[mac] = hashed_mac
         if self.hashwriter != None:
-          self.log('hashed mac {} to {}'.format(mac, hashed_mac))
+          logger.log('hashed mac {} to {}'.format(mac, hashed_mac))
           self.hashwriter.writerow({'mac': mac,
                                     'hash': self.hashes[mac],
                                     'locally_managed': locally_managed,
@@ -254,26 +328,33 @@ class Sniffer(threading.Thread):
     if locally_managed:
       if not hashed_mac in self.locally_managed_macs:
         self.locally_managed_macs.add(hashed_mac)
-        self.log('locally-managed device {} appeared'.format(hashed_mac))
+        logger.log('locally-managed device {} appeared'.format(hashed_mac))
     elif disallowed:
       if not hashed_mac in self.disallowed_macs:
         self.disallowed_macs.add(hashed_mac)
-        self.log('disallowed device {} appeared'.format(hashed_mac))
+        logger.log('disallowed device {} appeared'.format(hashed_mac))
       allowed = False
     elif hashed_mac not in self.firsts:
-      self.log('device {} appeared, RSSI {}'.format(hashed_mac, rssi))
+      logger.log('device {} appeared, RSSI {} dBm, frequency {} MHz'.
+                 format(hashed_mac, rssi, frequency))
+      if self.contactwriter != None:
+        self.contactwriter.writerow({'device': hashed_mac,
+                                     'time': capture_time,
+                                     'rssi': rssi,
+                                     'frequency': frequency})
       self.firsts[hashed_mac] = capture_time
       self.min_rssis[hashed_mac] = rssi
       self.max_rssis[hashed_mac] = rssi
-   #elif (capture_time - self.lasts[hashed_mac] > UPDATE_INTERVAL):
     elif (capture_time - self.lasts[hashed_mac] >= self.mindelay):
       first_timestruct = time.localtime(self.firsts[hashed_mac])
       if self.contactwriter != None:
         self.contactwriter.writerow({'device': hashed_mac,
                                      'time': capture_time,
-                                     'rssi': rssi})
-      self.log('device {} has been here {} minutes, RSSI {}'.
-               format(hashed_mac, int((capture_time - self.firsts[hashed_mac]) // 60), rssi))
+                                     'rssi': rssi,
+                                     'frequency': frequency})
+      logger.log('device {} has been here {} minutes, RSSI {} dBm, frequency {} MHz'.
+                 format(hashed_mac, int((capture_time - self.firsts[hashed_mac]) // 60),
+                        rssi, frequency))
     
     if not locally_managed and not disallowed:
       self.lasts[hashed_mac] = capture_time
@@ -296,12 +377,12 @@ class Sniffer(threading.Thread):
         self.countwriter.writerow({'time': int(round(self.last_update -
                                                      start_time)) / 60,
                                    'num_devices': len(self.firsts)})
-      self.log('{} devices assumed to be present'.format(len(self.firsts)))
+      logger.log('{} devices assumed to be present'.format(len(self.firsts)))
       for m in sorted(self.firsts.keys()):
         if time.time() - self.lasts[m] > PROXIMITY_TIMEOUT:
-          self.log('mac {} disappeared after {} minutes, min RSSI {}, max RSSI {}'.
-                   format(m, int((self.lasts[m] - self.firsts[m]) // 60),
-                          self.min_rssis[m], self.max_rssis[m]))
+          logger.log('mac {} disappeared after {} minutes, min RSSI {}, max RSSI {}'.
+                     format(m, int((self.lasts[m] - self.firsts[m]) // 60),
+                            self.min_rssis[m], self.max_rssis[m]))
           if self.rangewriter != None:
             self.rangewriter.writerow({'device': m,
                                        'start_time': self.firsts[m],
@@ -370,23 +451,28 @@ if __name__ == '__main__':
                       help='encrypt the detected MAC addresses')
   parser.add_argument('-m', '--mindelay', metavar='mindelay', type=int, default=0,
                       help='minimum number of seconds between recording contacts from the same device')
-  
-  sniffer = Sniffer(parser.parse_args())
+  parser.add_argument('-s', '--scanchannels', action='store_true',
+                      help='scan all wifi channels (boolean)')
+  args = parser.parse_args()
+  logger = Logger(args.logfile)
+  sniffer = Sniffer(args, logger)
+  scanner = Scanner(args, logger)
   start_time = time.time()
 
   try:
     sniffer.start()
+    scanner.start()
     while sniffer.running:
       time.sleep(10)
   finally:
-    sniffer.running = False
+    sniffer.stop()
+    scanner.stop()
     sniffer.join()
+    scanner.join()
 
   timestruct = time.localtime(time.time())
-  sniffer.log('execution ended')
+  logger.log('execution ended')
   if len(sniffer.disallowed_macs) > 0:
-    sniffer.log('disallowed MACs seen:')
+    logger.log('disallowed MACs seen:')
   for m in sniffer.disallowed_macs:
-    sniffer.log(m)
-
-  
+    logger.log(m)
