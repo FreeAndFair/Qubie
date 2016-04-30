@@ -60,9 +60,9 @@ To install Qubie from scratch on a Raspberry Pi, do the following:
 * Modify the Qubie init script `qubie.init` with your desired configuration and Qubie directory, and install it so Qubie runs on boot:
 
       cd (qubie-directory)
-      cp qubie.init qubie
+      cp qubie-init qubie
       (edit qubie with your editor of choice)
-      sudo cp qubie.init /etc/init.d/qubie
+      sudo cp qubie /etc/init.d
       sudo update-rc.d qubie add
       
 * Reboot your Raspberry Pi. Qubie should start on boot and log information (depending on how you've modified the init script) to the `log` and `data` directories in your Qubie directory.

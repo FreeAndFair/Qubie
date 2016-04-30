@@ -24,7 +24,7 @@ logsuffix=`date +"%Y%m%d_%H%M"`
 monitorcmd="iwconfig $interface mode monitor"
 hashes="" # -H $dir/data/hashes-$logsuffix.csv  if you want to log hashes
           # note that logging hashes eliminates privacy!
-cmd="./qubie.py -i $interface -l $dir/log/pqm-$logsuffix.log -c $dir/data/num-$logsuffix.csv -r $dir/data/range-$logsuffix.csv -C $dir/data/contacts-$logsuffix.csv $options $hashes"
+cmd="./qubie-wifi.py -i $interface -l $dir/log/pqm-$logsuffix.log -c $dir/data/num-$logsuffix.csv -r $dir/data/range-$logsuffix.csv -C $dir/data/contacts-$logsuffix.csv $options $hashes"
 user=""
 
 name=`basename $0`
