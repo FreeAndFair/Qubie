@@ -1,20 +1,30 @@
 #!/bin/sh
 ### BEGIN INIT INFO
-# Provides:          PQM
+# Provides:          Qubie
 # Required-Start:    $local_fs $network $time $syslog
 # Required-Stop:     $local_fs $network $time $syslog
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
-# Short-Description: Start PQM at boot time
-# Description:       Starts the PQM monitoring service.
+# Short-Description: Start Qubie at boot time
+# Description:       Starts the Qubie monitoring service.
 ### END INIT INFO
 
-dir="/var/pqm"
-interface="wlan1"
-logsuffix=`date +"%Y%m%d_%H%M"`
+# change this to your Qubie root directory
+dir="/usr/local/qubie"
 
+# change this to the WiFi interface you want Qubie to monitor
+interface="wlan1"
+
+# change this to include your desired command line options
+options="-w whitelist-ouis -e -m 1 -s"
+
+# you should not need to change anything below this line under normal usage scenarios
+
+logsuffix=`date +"%Y%m%d_%H%M"`
 monitorcmd="iwconfig $interface mode monitor"
-cmd="/usr/local/sbin/pqm_wifi_sniff.py -i $interface -w whitelist-ouis -l $dir/log/pqm-$logsuffix.log -c $dir/stats/num-$logsuffix.csv -r $dir/stats/range-$logsuffix.csv -H $dir/stats/hashes-$logsuffix.csv -C $dir/stats/contacts-$logsuffix.csv -e"
+hashes="" # -H $dir/data/hashes-$logsuffix.csv  if you want to log hashes
+          # note that logging hashes eliminates privacy!
+cmd="./qubie.py -i $interface -l $dir/log/pqm-$logsuffix.log -c $dir/data/num-$logsuffix.csv -r $dir/data/range-$logsuffix.csv -C $dir/data/contacts-$logsuffix.csv $options $hashes"
 user=""
 
 name=`basename $0`
@@ -36,9 +46,9 @@ case "$1" in
         echo "Already started"
     else
         echo "Starting $name"
-	cd "$dir"
-        sudo mkdir -p log
-        sudo mkdir -p stats        
+        sudo mkdir -p "$dir/log"
+        sudo mkdir -p "$dir/data" 
+        cd "$dir"       
         sudo $monitorcmd >> "$stdout_log" 2>> "$stderr_log"
         
         if [ -z "$user" ]; then

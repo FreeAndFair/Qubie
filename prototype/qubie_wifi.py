@@ -9,6 +9,7 @@ import binascii
 import csv
 import hashlib
 import hmac
+import netifaces
 import os
 import pcapy
 import random
@@ -41,6 +42,12 @@ CAPTURE_TIMEOUT = 0
 # the amount of time to stay on each channel, if scanning
 SCAN_CHANNEL_TIME = 5
 
+# BTLE main JavaScript file
+BTLE_SCRIPT = 'btle.js'
+
+# our network address, filled in after command line argument parsing
+NETWORK_ADDRESS = None
+
 # class Logger - logs output to a file
 class Logger():
   def __init__(self, logfile):
@@ -50,7 +57,7 @@ class Logger():
     if logfile != None:
       try:
         self.logfile = open(args.logfile, 'a', 1)
-        self.logfile.write('\n---NEW RUN---\n')
+        self.logfile.write('\n---ID {} STARTING NEW RUN---\n'.format(NETWORK_ADDRESS))
       except IOError:
         print('could not open log file {}, proceeding with no log file'.format(logfile))
         self.logfile = None
@@ -72,6 +79,16 @@ class Logger():
     if self.logfile != None:
       self.logfile.flush()
       os.fsync(self.logfile)
+
+# class BTLE - interfaces to a Bluetooth Low Energy service
+# to provide basic runtime information
+
+class BTLE():
+  def __init__(self, logger):
+    # initialize variables
+    self.logger = logger
+    self.btleproc = subprocess.Popen(['node', BTLE_SCRIPT], stdin=subprocess.PIPE)
+    logger.log('started btle service')
 
 
 # class Scanner - switches the wifi channel on the specified interface among
@@ -124,7 +141,7 @@ class Scanner(threading.Thread):
 # class Sniffer - extends Thread and runs the actual sniffing, including
 # tracking of devices in proximity and statistics about their presence/absence
 class Sniffer(threading.Thread):
-  def __init__(self, args, logger):
+  def __init__(self, args, logger, btle):
     super(Sniffer, self).__init__()
     
     # initialize signal handler
@@ -133,6 +150,7 @@ class Sniffer(threading.Thread):
     
     # initialize variables
     self.logger = logger
+    self.btle = btle
     self.firsts = {}
     self.lasts = {}
     self.min_rssis = {}
@@ -430,6 +448,7 @@ def read_oui_list(l):
   return maclist
     
 if __name__ == '__main__':
+  # parse the command line
   parser = argparse.ArgumentParser(description='Detect the number of nearby wireless devices over time.')
   parser.add_argument('-i', '--interface', metavar='interface', default='wlan0')
   group = parser.add_mutually_exclusive_group()
@@ -453,12 +472,34 @@ if __name__ == '__main__':
                       help='minimum number of seconds between recording contacts from the same device')
   parser.add_argument('-s', '--scanchannels', action='store_true',
                       help='scan all wifi channels (boolean)')
+  parser.add_argument('-B', '--bluetooth', action='store_true',
+                      help='broadcast a Bluetooth LE service with status updates')
   args = parser.parse_args()
+  
+  # create our logger
   logger = Logger(args.logfile)
-  sniffer = Sniffer(args, logger)
-  scanner = Scanner(args, logger)
-  start_time = time.time()
 
+  # get our network address
+  try:
+    raw_network_address = netifaces.ifaddresses(args.interface)[netifaces.AF_LINK][0]['addr']
+    NETWORK_ADDRESS = raw_network_address.replace(":","")
+    logger.log('network address is {}'.format(NETWORK_ADDRESS))
+  except:
+    NETWORK_ADDRESS = 'ffffffffffff'
+    logger.log('could not get network address, using default')
+
+  btle = None
+  if args.bluetooth:
+    try:
+      btle = BTLE(logger)
+    except:
+      btle = None
+      logger.log('error starting btle service, proceeding without it')
+  sniffer = Sniffer(args, logger, btle)
+  scanner = Scanner(args, logger)
+
+  # start running
+  start_time = time.time()
   try:
     sniffer.start()
     scanner.start()
@@ -467,6 +508,8 @@ if __name__ == '__main__':
   finally:
     sniffer.stop()
     scanner.stop()
+    if btle != None:
+      btle.stop()
     sniffer.join()
     scanner.join()
 

@@ -1,0 +1,39 @@
+diff --git a/Makefile b/Makefile
+index 0e72f7d..4412481 100644
+--- a/Makefile
++++ b/Makefile
+@@ -6,7 +6,7 @@ EXTRA_CFLAGS += -Wall
+ #EXTRA_CFLAGS += -Werror
+ #EXTRA_CFLAGS += -pedantic
+ #EXTRA_CFLAGS += -Wshadow -Wpointer-arith -Wcast-qual -Wstrict-prototypes -Wmissing-prototypes
+-EXTRA_CFLAGS += -Werror=incompatible-pointer-types
++#EXTRA_CFLAGS += -Werror=incompatible-pointer-types
+ 
+ EXTRA_CFLAGS += -Wno-unused-variable
+ EXTRA_CFLAGS += -Wno-unused-value
+@@ -74,7 +74,8 @@ CONFIG_AP_WOWLAN = n
+ ######### Notify SDIO Host Keep Power During Syspend ##########
+ CONFIG_RTW_SDIO_PM_KEEP_POWER = y
+ ###################### Platform Related #######################
+-CONFIG_PLATFORM_GENERIC = y
++CONFIG_PLATFORM_GENERIC = n
++CONFIG_PLATFORM_ARM_RPI = y
+ CONFIG_PLATFORM_I386_PC = n
+ CONFIG_PLATFORM_ANDROID_X86 = n
+ CONFIG_PLATFORM_ANDROID_INTEL_X86 = n
+@@ -889,6 +890,15 @@ ifeq ($(CONFIG_TDLS), y)
+ EXTRA_CFLAGS += -DCONFIG_TDLS
+ endif
+ 
++ifeq ($(CONFIG_PLATFORM_ARM_RPI), y)
++EXTRA_CFLAGS += -DCONFIG_LITTLE_ENDIAN
++ARCH := arm
++CROSS_COMPILE :=
++KVER  := $(shell uname -r)
++KSRC ?= /lib/modules/$(KVER)/build
++MODDESTDIR := /lib/modules/$(KVER)/kernel/drivers/net/wireless/
++endif
++
+ ifeq ($(CONFIG_WIFI_MONITOR), y)
+ EXTRA_CFLAGS += -DCONFIG_WIFI_MONITOR
+ endif
