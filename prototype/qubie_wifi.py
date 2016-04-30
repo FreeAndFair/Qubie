@@ -21,8 +21,6 @@ import sys
 import threading
 import time
 from exceptions import OSError
-from watchdog.observers import Observer
-from watchdog.events import PatternMatchingEventHandler
 
 # SYMBOLIC CONSTANTS
 
