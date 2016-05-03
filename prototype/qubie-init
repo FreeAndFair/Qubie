@@ -1,7 +1,7 @@
 #!/bin/sh
 ### BEGIN INIT INFO
 # Provides:          Qubie
-# Required-Start:    $local_fs $network $time $syslog
+# Required-Start:    $all
 # Required-Stop:     $local_fs $network $time $syslog
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
@@ -40,6 +40,12 @@ is_running() {
     [ -f "$pid_file" ] && ps `get_pid` > /dev/null 2>&1
 }
 
+wait_for_bluetooth() {
+    while [ ! "`ps -ef | grep bluetoothd | grep -v grep`" ]; do
+      sleep 5
+    done
+}
+
 case "$1" in
     start)
     if is_running; then
@@ -48,7 +54,9 @@ case "$1" in
         echo "Starting $name"
         sudo mkdir -p "$dir/log"
         sudo mkdir -p "$dir/data" 
-        cd "$dir"       
+        cd "$dir"    
+        
+        wait_for_bluetooth   
         sudo $monitorcmd >> "$stdout_log" 2>> "$stderr_log"
         
         if [ -z "$user" ]; then
@@ -67,7 +75,7 @@ case "$1" in
     if is_running; then
         echo -n "Stopping $name.."
         kill `get_pid`
-        for i in {1..10}
+        for i in `seq 1 20`
         do
             if ! is_running; then
                 break

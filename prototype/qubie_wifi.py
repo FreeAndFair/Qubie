@@ -82,7 +82,7 @@ class Logger():
   # stops logging and closes the log file
   def stop(self):
     if self.logfile != None:
-      self.logfile.write('\n---ID {} ENDING RUN---\n'.format(NETWORK_ADDRESS))
+      self.logfile.write('---ID {} ENDING RUN---\n'.format(NETWORK_ADDRESS))
       self.logfile.close()
 
 
@@ -289,6 +289,9 @@ class Sniffer(threading.Thread):
                                    'max_rssi': self.max_rssis[m]})
       self.firsts.pop(m, None)
       self.lasts.pop(m, None)
+
+    if len(sniffer.disallowed_macs) > 0:
+      logger.log('{} disallowed devices seen'.format(len(sniffer.disallowed_macs)))
 
     if self.countfile != None:
       self.countfile.flush()
@@ -561,10 +564,5 @@ if __name__ == '__main__':
     scanner.join()
 
   timestruct = time.localtime(time.time())
-  logger.log('execution ended')
-  if len(sniffer.disallowed_macs) > 0:
-    logger.log('disallowed MACs seen:')
-  for m in sniffer.disallowed_macs:
-    logger.log(m)
   logger.stop()
 

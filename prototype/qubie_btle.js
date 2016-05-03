@@ -51,7 +51,6 @@ bleno.on('advertisingStart', function(error) {
 bleno.on('stateChange', function(state) {
   if (state === 'poweredOn') {
     bleno.startAdvertising("Qubie", UUID);
-    poweredOn = true;
   } else {
     bleno.stopAdvertising();
   }
