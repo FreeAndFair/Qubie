@@ -16,24 +16,30 @@ To install Qubie from scratch on a Raspberry Pi, do the following:
 	   
 	   # if using Bluetooth Low Energy for status indications, also run the commands below
 	   sudo apt-get remove nodered nodejs nodejs-legacy
-	   curl -sL https://deb.nodesource.com/setup_0.12 | bash -
+	   curl -sL https://deb.nodesource.com/setup_6.x | bash -
 	   sudo apt-get install bc nodejs bluetooth bluez libbluetooth-dev libudev-dev
-	   sudo npm install bleno
 
 * Create any accounts you like on the Raspberry Pi, and change passwords for security; decide where you intend to store the Qubie sources and other required sources. Note that as of now, Qubie must be run as root.
 
-* Check out the Qubie repository somewhere; the result will become your Qubie directory for later use:
+* Check out the Qubie repository somewhere; the result will become your Qubie directory (called `(qubie-directory)` in subsequent instructions), for later use:
 
        git clone <url goes here>
+       
+       # if using Bluetooth Low Energy, install necessary components in the Qubie directory
+       # you wiill see some warnings from npm, which can be freely ignored
+       cd (qubie-directory)
+       npm install bleno
 
-* If using the recommended WiFi dongle (D-Link DWA-171), build its drivers (if using a different WiFi dongle or built-in WiFi, be sure that it supports monitor mode): 
+* If using the recommended WiFi dongle (D-Link DWA-171), build its drivers; if using a different WiFi dongle or built-in WiFi, be sure appropriate drivers are installed and that it supports monitor mode: 
   * First, install the current Raspbian kernel headers:
 
 	     # Get rpi-source and make it executable
-	     sudo wget https://raw.githubusercontent.com/notro/rpi-source/master/rpi-source -O /usr/local/bin/rpi-source
+	     sudo wget https://raw.githubusercontent.com/notro/rpi-source/master/rpi-source \
+	               -O /usr/local/bin/rpi-source
 	     sudo chmod +x /usr/local/bin/rpi-source
 
-	     # Tell the update mechanism that this is the latest version of the script, and get the kernel headers
+	     # Tell the update mechanism that this is the latest version of the script, 
+	     # and get the kernel headers
 	     sudo rpi-source -q --tag-update
 	     sudo rpi-source
 	     sudo chmod og+rx /root

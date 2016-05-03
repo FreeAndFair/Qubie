@@ -1,0 +1,6 @@
+#!/bin/sh
+BTNAME="Qubie"
+if [ "$#" -eq 1 ]; then
+  BTNAME="$BTNAME-$1"
+fi
+BLENO_DEVICE_NAME=$BTNAME node qubie_btle.js

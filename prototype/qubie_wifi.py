@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
-# Polling Queue Monitor Proof of Concept - WiFi Sniffer
-# Written by Daniel M. Zimmerman (dmz@galois.com)
-# Copyright (C) 2015 Galois, Inc.
+# Qubie Proof-of-Concept WiFi Sniffer
+# Written by Daniel M. Zimmerman (dmz@freeandfair.us)
+# Copyright (C) 2016 Free & Fair
 
 import argparse
 import binascii
@@ -41,10 +41,11 @@ CAPTURE_TIMEOUT = 0
 SCAN_CHANNEL_TIME = 5
 
 # BTLE main JavaScript file
-BTLE_SCRIPT = 'btle.js'
+BTLE_SCRIPT = './qubie_btle'
 
 # our network address, filled in after command line argument parsing
 NETWORK_ADDRESS = None
+
 
 # class Logger - logs output to a file
 class Logger():
@@ -78,15 +79,32 @@ class Logger():
       self.logfile.flush()
       os.fsync(self.logfile)
 
+  # stops logging and closes the log file
+  def stop(self):
+    if self.logfile != None:
+      self.logfile.write('\n---ID {} ENDING RUN---\n'.format(NETWORK_ADDRESS))
+      self.logfile.close()
+
+
 # class BTLE - interfaces to a Bluetooth Low Energy service
 # to provide basic runtime information
-
 class BTLE():
   def __init__(self, logger):
     # initialize variables
     self.logger = logger
-    self.btleproc = subprocess.Popen(['node', BTLE_SCRIPT], stdin=subprocess.PIPE)
+    self.btleproc = subprocess.Popen([BTLE_SCRIPT, NETWORK_ADDRESS], stdin=subprocess.PIPE, bufsize=1)
     logger.log('started btle service')
+        
+  # Updates the broadcast message to the specified string
+  def update(self, updatemsg):
+    try:
+      print >>self.btleproc.stdin, '{}'.format(updatemsg)
+    except Exception as e:
+      logger.log('error updating btle service: {}'.format(e))
+
+  # Stops the BTLE service
+  def stop(self):
+    self.btleproc.terminate()
 
 
 # class Scanner - switches the wifi channel on the specified interface among
@@ -110,7 +128,7 @@ class Scanner(threading.Thread):
     # attempt to create the channel list
     channel_list = []
     try:
-      listproc = subprocess.Popen(['iwlist', self.interface, 'channel'], stdout=subprocess.PIPE)
+      listproc = subprocess.Popen(['iwlist', self.interface, 'channel'], stdout=subprocess.PIPE, bufsize=1)
       for line in listproc.communicate()[0].split('\n'):
         if 'Channel' in line and not 'Frequency' in line:
           channel_list.append(re.findall(r'\d+', line)[0])
@@ -135,6 +153,7 @@ class Scanner(threading.Thread):
   # the stop method for this thread
   def stop(self):
     self.running = False
+
 
 # class Sniffer - extends Thread and runs the actual sniffing, including
 # tracking of devices in proximity and statistics about their presence/absence
@@ -176,7 +195,9 @@ class Sniffer(threading.Thread):
     if args.countfile != None:
       try:
         self.countfile = open(args.countfile, 'w', 1)
-        self.countwriter = csv.DictWriter(self.countfile, fieldnames=['time', 'num_devices'])
+        self.countwriter = csv.DictWriter(self.countfile,
+                                          fieldnames=['time', 'num_devices', 'min_duration',
+                                                      'max_duration', 'avg_duration'])
         self.countwriter.writeheader()
       except IOError:
         logger.log('could not device count file {}, proceeding without it'.format(numfile))
@@ -253,6 +274,8 @@ class Sniffer(threading.Thread):
         self.running = False
 
     logger.log('shutting down')
+    if self.btle != None:
+      self.btle.update('shutting down')
     
     for m in sorted(self.firsts.keys()):
       logger.log('mac {} present for {} minutes at shutdown, min RSSI {}, max RSSI {}'.
@@ -386,16 +409,12 @@ class Sniffer(threading.Thread):
   # update the lists of devices in proximity based on our
   # update and timeout intervals
   def update_device_lists(self):
-    if (time.time() - self.last_update > UPDATE_INTERVAL):
-      self.last_update = time.time()
+    current_time = time.time()
+    if (current_time - self.last_update > UPDATE_INTERVAL):
+      self.last_update = current_time
       timestruct = time.localtime(self.last_update)
-      if self.countwriter != None:
-        self.countwriter.writerow({'time': int(round(self.last_update -
-                                                     start_time)) / 60,
-                                   'num_devices': len(self.firsts)})
-      logger.log('{} devices assumed to be present'.format(len(self.firsts)))
       for m in sorted(self.firsts.keys()):
-        if time.time() - self.lasts[m] > PROXIMITY_TIMEOUT:
+        if current_time - self.lasts[m] > PROXIMITY_TIMEOUT:
           logger.log('mac {} disappeared after {} minutes, min RSSI {}, max RSSI {}'.
                      format(m, int((self.lasts[m] - self.firsts[m]) // 60),
                             self.min_rssis[m], self.max_rssis[m]))
@@ -409,6 +428,36 @@ class Sniffer(threading.Thread):
           self.lasts.pop(m, None)
           self.min_rssis.pop(m, None)
           self.max_rssis.pop(m, None)
+
+      sum = 0
+      max = 0
+      min = float('inf')
+      for m in (self.firsts.keys()):
+        wait = self.lasts[m] - self.firsts[m]
+        sum = sum + wait
+        if wait < min:
+          min = wait
+        if max < wait:
+          max = wait
+      avg = sum / len(self.firsts)
+
+      if self.countwriter != None:
+        self.countwriter.writerow({'time': int(round(self.last_update -
+                                                     start_time)) / 60,
+                                   'num_devices': len(self.firsts),
+                                   'min_duration': min,
+                                   'max_duration': max,
+                                   'avg_duration': avg})
+
+      logger.log('{} devices assumed to be present'.format(len(self.firsts)))
+      logger.log('wait durations: {} min, {} max, {} avg'.format(int(min // 60),
+                                                                 int(max // 60),
+                                                                 int(avg // 60)))
+      if (self.btle != None):
+        btle.update('{} devices: {} min, {} max, {} avg'.format(len(self.firsts),
+                                                                int(min // 60),
+                                                                int(max // 60),
+                                                                int(avg // 60)))
 
 # the main body of the program
 
@@ -490,9 +539,9 @@ if __name__ == '__main__':
   if args.bluetooth:
     try:
       btle = BTLE(logger)
-    except:
+    except Exception as e:
       btle = None
-      logger.log('error starting btle service, proceeding without it')
+      logger.log('error starting btle service ({}), proceeding without it'.format(e))
   sniffer = Sniffer(args, logger, btle)
   scanner = Scanner(args, logger)
 
@@ -517,3 +566,5 @@ if __name__ == '__main__':
     logger.log('disallowed MACs seen:')
   for m in sniffer.disallowed_macs:
     logger.log(m)
+  logger.stop()
+
