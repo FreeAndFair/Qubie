@@ -1,36 +1,39 @@
-Polling Queue Minder
+Qubie
 ===
 
-*PQM*, or the Polling Queue Minder, is a part of the Free & Fair suite of 
-products. It is a compact polling place monitoring system that attempts
-to estimate the wait time for casting a vote. It can be used by jurisdictions 
-to gather data about polling place usage and performance, for use in allocating
-resources for future elections. It can also optionally make wait time 
-information available on the Web in real time, so that voters can accurately 
-gauge how long the voting process will take them and plan accordingly (by 
-choosing among polling places, if they have multiple options; by voting at a 
-different time; or, in jurisdictions with early voting, by voting on a different
-day). The system has two main components: a small open-source hardware box running
-open-source software that monitors a polling place for mobile device activity, 
-and an optional application that makes wait time estimates available online.
+*Qubie*, also known as the Polling Queue Minder, is a part of the Free
+& Fair suite of products. It is a compact polling place monitoring
+system that attempts to estimate the wait time for casting a vote. It
+can be used by jurisdictions to gather data about polling place usage
+and performance, for use in allocating resources for future
+elections. It can also optionally make wait time information available
+on the Web in real time, so that voters can accurately gauge how long
+the voting process will take them and plan accordingly (by choosing
+among polling places, if they have multiple options; by voting at a
+different time; or, in jurisdictions with early voting, by voting on a
+different day). The system has two main components: a small
+open-source hardware box running open-source software that monitors a
+polling place for mobile device activity, and an optional application
+that makes wait time estimates available online.
 
-Correctness of the software components of the system, and privacy and security 
-guarantees with respect to the individually identifiable data they detect, 
-are critical aspects of this project.
+Correctness of the software components of the system, and privacy and
+security guarantees with respect to the individually identifiable data
+they detect, are critical aspects of this project.
 
 Prototype Background
 ===
 
-Prototype implementations of PQM were developed as a part of the DemTech
-Research Project at the IT University of Copenhagen in 2011-2015 and were 
-tested at Danish polling places. This implementation of the PQM is being
-developed completely from scratch, independently of the original project.
+Prototype implementations of Qubie were developed as a part of the
+DemTech Research Project at the IT University of Copenhagen in
+2011-2015 and were tested at Danish polling places. This
+implementation of Qubie is being developed completely from scratch,
+independently of the original project.
 
 Development Process and Methodology
 ===
 
-The current version of the *PQM* has been developed using the Trust-by-Design 
-(TBD) software engineering methodology.
+The current version of *Qubie* has been developed using the
+Trust-by-Design (TBD) software engineering methodology.
 
 The TBD methodology is documented in several papers published by Joe
 Kiniry and his coauthors, available via http://www.kindsoftware.com/.
@@ -69,7 +72,7 @@ Requirements
 ===
 
 What follows are the mandatory and secondary requirements imposed upon
-the *PQM*.  Informal verification (in the traditional software
+*Qubie*.  Informal verification (in the traditional software
 engineering sense) of these requirements is accomplished by several
 means, including formal verification of properties of the system's
 specification and implementation, as well as traceability from the
@@ -84,7 +87,7 @@ using radio emissions of their wireless devices as a proxy.
 * Must be able to estimate the amount of time that each individual voter
 spends in the polling place.
 * Must maintain historical information about polling place occupancy for 
-at least 12 hours of activity.
+at least 14 hours of activity.
 * Must be able to estimate the current wait time for voting based on 
 the amounts of time that voters have spent in the polling place.
 * Must be able to detect "outliers", such as poll workers and other individuals
@@ -131,12 +134,13 @@ function as a data collector.
 Development Instructions
 ===
 
-Current development on the prototype *PQM* is taking place on the Raspberry Pi
+Current development on the prototype *Qubie* is taking place on the Raspberry Pi
 platform. It is dependent on the following libraries, tools, and frameworks:
 
 * [Python] [5]
-* [Scapy] [6], for wireless packet inspection
-* [BlueZ] [7], for Bluetooth Low Energy communication
+* [Node.js] [6]
+* [Pcapy] [7], for wireless packet inspection
+* [Bleno] [8], for Bluetooth Low Energy communication
 
 [1]: http://research.microsoft.com/en-us/projects/contracts/  "Code Contracts library for .NET"
 
@@ -148,7 +152,9 @@ platform. It is dependent on the following libraries, tools, and frameworks:
 
 [5]: http://www.python.org/ "Python"
 
-[6]: http://www.secdev.org/projects/scapy/ "Scapy"
+[6]: https://nodejs.org/ "Node.js"
 
-[7]: http://www.bluez.org/ "BlueZ"
+[7]: https://github.com/CoreSecurity/pcapy "Pcapy"
+
+[8]: https://github.com/sandeepmistry/bleno "Bleno"
 
