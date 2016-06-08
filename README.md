@@ -32,8 +32,9 @@ independently of the original project.
 Development Process and Methodology
 ===
 
-The current version of *Qubie* has been developed using the
-Trust-by-Design (TBD) software engineering methodology.
+*Qubie* is being developed using the Trust-by-Design (TBD) software 
+engineering methodology. The initial prototype version, available in 
+the "prototype" directory, uses a subset of this methodology.
 
 The TBD methodology is documented in several papers published by Joe
 Kiniry and his coauthors, available via http://www.kindsoftware.com/.
@@ -47,11 +48,11 @@ In general, a system is comprised of:
 * a domain analysis and a detailed architecture specifications written
   in the [Extended Business Object Notation (EBON)] [3],
 
-* formal specifications written at the source code level in one or
-  more contract-based specification languages like [Code Contracts] [1]
-  (for .NET systems), the [Java Modeling Language] [2] (for JVM
-  systems), or the [Executable ANSI/ISO C Specification Language
-  (E-ACSL)] [4],
+* where applicable, formal specifications written at the source code 
+  level in one or more contract-based specification languages like 
+  [Code Contracts] [1] (for .NET systems), the 
+  [Java Modeling Language] [2] (for JVM systems), or the 
+  [Executable ANSI/ISO C Specification Language (E-ACSL)] [4],
 
 * protocol descriptions typically formally specified using abstract
   state machines (ASMs), petri nets, formally annotated collaboration
@@ -59,8 +60,8 @@ In general, a system is comprised of:
   reasoning about such protocols,
 
 * a hand-written set of (sub)system tests and an automatically
-  generated set of unit tests (using [PEX] [7] for .NET systems and
-  [ JMLUnitNG] [8] for JVM ones), including reports on the completeness
+  generated set of unit tests (using, e.g., [PEX] [7] for .NET systems and
+  [JMLUnitNG] [8] for JVM ones), including reports on the completeness
   and quality of these validation artifacts, and
 
 * a set of evidence that the system fulfills its requirements, usually
@@ -134,8 +135,9 @@ function as a data collector.
 Development Instructions
 ===
 
-Current development on the prototype *Qubie* is taking place on the Raspberry Pi
-platform. It is dependent on the following libraries, tools, and frameworks:
+Development on the prototype version of *Qubie* is taking place on the 
+Raspberry Pi platform. It is dependent on the following libraries, tools, 
+and frameworks:
 
 * [Python] [5]
 * [Node.js] [6]

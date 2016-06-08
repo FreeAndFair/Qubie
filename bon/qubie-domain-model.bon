@@ -1,0 +1,176 @@
+-- This specification is written in the EBON specification language, based upon
+-- the BON specification language by Walden and Nerson. See http://bon-method.com/
+-- for more information about BON and http://kindsoftware.com/ for more information
+-- about EBON. 
+
+-- Informal Charts
+
+-- BON Domain Model
+
+system_chart QUBIE_SYSTEM
+indexing
+  author: "Daniel M. Zimmerman <dmz@freeandfair.us>";
+  organization: "Free & Fair";
+  keywords: "polling place", "monitoring", "queue", "reporting",
+            "Free & Fair";
+  created: "Tue May 31 15:00:00 PDT 2016";
+  modified: "Wed June 8 15:00:00 PDT 2016";
+  github: "https://github.com/FreeAndFair/Qubie";
+explanation
+  "A passive, privacy-preserving polling place monitoring system"
+cluster MAIN
+description "The main concepts comprising Qubie." 
+end
+
+cluster_chart MAIN
+explanation
+  "The domain concepts important to the high-level design of Qubie."
+class QUBIE
+  description "A device that monitors a polling place."
+class WIFI_MONITOR
+  description "A component that monitors the WiFi protocols (IEEE 802.11a/b/g/n/ac)."
+class BLUETOOTH_COMMUNICATOR
+  description "A component that communicates via Bluetooth Low Energy."
+class DEVICE_IDENTIFIER
+  description "An identifier unique to an individual WiFi device."
+class KEYED_HASH
+  description "A secure hash function initialized with a cryptographic key."
+class CONTACT_RECORD
+  description "A record of a single contact with a WiFi device."
+class OBSERVATIONS
+  description "A collection of contact records observed by a Qubie."
+class LOG_ENTRY
+  description "A log entry."
+class LOG
+  description "A persistent log of events and information."
+end
+
+class_chart QUBIE
+explanation
+  "Qubie is a passive, privacy-preserving monitoring system that records\
+ \ contacts with WiFi devices in its vicinity. When used in a polling place\
+ \ or other location, its observations can provide information about queue\
+ \ lengths and other characteristics of the environment."
+query
+  "Are you running?",
+  "What observations have you recorded?",
+  "What is your WiFi monitor?",
+  "What is your Bluetooth communicator?",
+  "What is your log?"
+command
+  "Start running!",
+  "Stop running!",
+  "Record the_observation!"
+constraint
+  "Once initialized, the same log, set of observations, WiFi monitor, and Bluetooth\
+ \ communicator are used for the entirety of the run time.",
+  "A human-readable version of every observation is recorded in the log.",
+  "All important events (startup, shutdown, error conditions) are recorded in the log.",
+  "Once a Qubie is stopped, it cannot be restarted."
+end
+
+class_chart WIFI_MONITOR
+explanation
+  "A WiFi monitor continually scans the WiFi spectrum for wireless clients,\
+ \ generating an observation each time it sees a client."
+query
+  "Are you running?",
+  "What frequencies can you listen on?",
+  "What frequency are you listening on?",
+  "Is automatic frequency hopping turned on?",
+  "What is your keyed hash?",
+  "What is your Qubie?"
+command
+  "Start running!",
+  "Stop running!",
+  "Set your frequency to the_frequency!",
+  "Set automatic frequency hopping to the_truth_value!",
+  "A device is present with the_mac_address and the_signal_strength!"
+constraint
+  "The keyed hash is created with an ephemeral key before the WiFi monitor starts running.",
+  "The keyed hash is never changed after the WiFi monitor starts running.",
+  "When the WiFi monitor detects a device, it must hash the device's MAC address and\
+ \ then report the observation to its Qubie."
+end
+
+class_chart BLUETOOTH_COMMUNICATOR
+explanation
+  "A Bluetooth communicator relays status information about a Qubie to external \
+ \ devices for live monitoring purposes."
+query
+  "What is your Qubie's current status?",
+  "What client, if any, is currently subscribed for status updates?"
+command
+  "Subscribe the_bluetooth_client for status updates!",
+  "Unsubscribe the_bluetooth_client from status updates!",
+  "Your Qubie's current status is the_status!"
+constraint
+  "A Bluetooth client can only be subscribed when no other Bluetooth client is subscribed.",
+  "A Bluetooth client can only be unsubscribed when it is subscribed.",
+  "When the current status is updated, the subscribed Bluetooth client (if any) is notified."
+end
+
+class_chart DEVICE_IDENTIFIER
+explanation
+  "A device identifier uniquely identifies a WiFi device. It may be either a MAC address \
+ \ or some encoded representation of a MAC address."
+query
+  "What is your string representation?",
+  "Are you encrypted?"
+constraint
+  "Device identifiers are immutable."
+end
+
+class_chart KEYED_HASH
+explanation
+  "A keyed hash is a secure hash function initialized with a secret key."
+query
+  "What is the hashed version of the_string?"
+command
+  "Your key is the_key!"
+constraint
+  "Hashed versions of strings cannot be generated before the key is set.",
+  "The key may only be set once.",
+  "Hashing the same string multiple times must give the same result each time.",
+  "The key must be not be stored in stable storage, displayed on a screen,\
+ \ or logged in any way."
+end
+
+class_chart CONTACT_RECORD
+explanation
+  "A contact record contains data about a single contact with a WiFi device."
+query
+  "What is the device identifier for the contacted device?",
+  "When was the contact made?",
+  "What was the signal strength of the contact?",
+  "On what frequency was the contact made?"
+constraint
+  "Contact records are immutable."
+end
+
+class_chart OBSERVATIONS
+explanation
+  "A set of observations contains contact records generated by a WiFi monitor."
+inherit SET
+constraint
+  "All elements are contact records."
+end
+
+class_chart LOG_ENTRY
+explanation
+  "A log entry describes an event in the system, including when it occurred."
+query
+  "What is your description?",
+  "When did you occur?"
+constraint
+  "Log entries are immutable."
+end
+
+class_chart LOG
+explanation
+  "A log is an ordered list of human-readable entries representing events in the system."
+inherit LIST
+constraint
+  "All elements are log entries."
+end
+

@@ -1,7 +1,8 @@
 Qubie Installation
 ===
 
-To install Qubie from scratch on a Raspberry Pi, do the following:
+To install Qubie from scratch on a Raspberry Pi 3 (it should work on other Raspberry Pi hardware,
+but you'll need a supported Bluetooth module for Bluetooth Low Energy functionality), do the following:
 
 * Install Raspbian (either from NOOBS or directly), 32GB SD card recommended
 * Update/upgrade the package repository, OS and kernel: 
@@ -10,7 +11,7 @@ To install Qubie from scratch on a Raspberry Pi, do the following:
        sudo apt-get upgrade
        sudo rpi-update
 	
-* Reboot if necessary and install required packages, including removing the default, obsolete Node.js installation:
+* Reboot if necessary and install required packages, including removing the default, obsolete Node.js installation if you're going to use Bluetooth Low Energy:
 
 	   sudo apt-get install python-pcapy python-netifaces
 	   
@@ -19,15 +20,15 @@ To install Qubie from scratch on a Raspberry Pi, do the following:
 	   curl -sL https://deb.nodesource.com/setup_6.x | bash -
 	   sudo apt-get install bc nodejs bluetooth bluez libbluetooth-dev libudev-dev
 
-* Create any accounts you like on the Raspberry Pi, and change passwords for security; decide where you intend to store the Qubie sources and other required sources. Note that as of now, Qubie must be run as root.
+* Create any accounts you like on the Raspberry Pi, and change passwords for security; decide where you intend to store the Qubie sources and other required sources. Note that this prototype version of Qubie must be run as root.
 
 * Check out the Qubie repository somewhere; the result will become your Qubie directory (called `(qubie-directory)` in subsequent instructions), for later use:
 
-       git clone <url goes here>
+       git clone https://github.com/FreeAndFair/Qubie
        
-       # if using Bluetooth Low Energy, install necessary components in the Qubie directory
+       # if using Bluetooth Low Energy, install necessary components in the prototype directory
        # you wiill see some warnings from npm, which can be freely ignored
-       cd (qubie-directory)
+       cd (qubie-directory)/prototype
        npm install bleno
 
 * If using the recommended WiFi dongle (D-Link DWA-171), build its drivers; if using a different WiFi dongle or built-in WiFi, be sure appropriate drivers are installed and that it supports monitor mode: 
