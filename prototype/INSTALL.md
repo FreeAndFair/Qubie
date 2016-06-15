@@ -17,7 +17,7 @@ but you'll need a supported Bluetooth module for Bluetooth Low Energy functional
 	   
 	   # if using Bluetooth Low Energy for status indications, also run the commands below
 	   sudo apt-get remove nodered nodejs nodejs-legacy
-	   curl -sL https://deb.nodesource.com/setup_6.x | bash -
+	   curl -sL https://deb.nodesource.com/setup_6.x | sudo bash -
 	   sudo apt-get install bc nodejs bluetooth bluez libbluetooth-dev libudev-dev
 
 * Create any accounts you like on the Raspberry Pi, and change passwords for security; decide where you intend to store the Qubie sources and other required sources. Note that this prototype version of Qubie must be run as root.
@@ -27,7 +27,7 @@ but you'll need a supported Bluetooth module for Bluetooth Low Energy functional
        git clone https://github.com/FreeAndFair/Qubie
        
        # if using Bluetooth Low Energy, install necessary components in the prototype directory
-       # you wiill see some warnings from npm, which can be freely ignored
+       # you wiill see some warnings from npm, which can be safely ignored
        cd (qubie-directory)/prototype
        npm install bleno
 
@@ -53,7 +53,7 @@ but you'll need a supported Bluetooth module for Bluetooth Low Energy functional
          make
          sudo make install
          
-  * Reboot, or manually load the new kernel module with `insmod 8812au.ko`
+  * Reboot, or manually load the new kernel module with `sudo insmod 8812au.ko`
 
 * If using Bluetooth Low Energy for status indications, disable the Bluetooth daemon on the Raspberry Pi:
 
