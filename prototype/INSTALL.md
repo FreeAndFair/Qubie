@@ -42,6 +42,7 @@ but you'll need a supported Bluetooth module for Bluetooth Low Energy functional
 
 	```
 	     # Get rpi-source and make it executable
+	     sudo apt-get install bc
 	     sudo wget https://raw.githubusercontent.com/notro/rpi-source/master/rpi-source \
 	               -O /usr/local/bin/rpi-source
 	     sudo chmod +x /usr/local/bin/rpi-source
@@ -87,6 +88,6 @@ but you'll need a supported Bluetooth module for Bluetooth Low Energy functional
       sudo cp qubie /etc/init.d
       sudo update-rc.d qubie defaults
 	```
-	      
+		      
 * Reboot your Raspberry Pi. Qubie should start on boot and log information (depending on how you've modified the init script) to the `log` and `data` directories in your Qubie directory.
       
