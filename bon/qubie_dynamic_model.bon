@@ -1,0 +1,114 @@
+dynamic_diagram QUBIE_FLOW
+	--the flow of different stages qubie goes through
+component	
+	scenario "on: qubie is powered up and activated"
+	action
+		"1" "qubie receives power"
+		"2" "qubie begins booting"
+		"3" "qubie begins running"
+		"4" "qubie stops"
+		"5" "qubie is powered off"
+	end
+	object QUBIE
+	object BLUETOOTH_COMMUNICATOR
+	--qubie is powered up
+	--TODO "1"
+	--qubie begins booting scenario
+	QUBIE calls booting "2"
+	--qubie begins running
+	QUBIE calls running "3"
+	--qubie is stopped
+	BLUETOOTH_COMMUNICATOR calls QUBIE "4" --TODO should this be bt_client?
+	--qubie is powered off
+	--TODO "5"
+	--TODO all states can transition to final state
+end	
+
+dynamic_diagram QUBIE_INITIALIZATION
+	-- How the qubie initializes itself.
+component
+	scenario "booting: set up all configurations and begin searching for contacts."
+	action 
+		"1" "Logger Initialization"
+		"2" "Bluetooth Initialization"
+		"3" "Wifi Initialization"
+	end
+	object LOG
+	object QUBIE
+	object OBSERVATIONS
+	object WIFI_MONITOR
+	object BLUETOOTH_COMMUNICATOR
+	
+	-- send first "booting" log entry to logger and start running.
+	QUBIE calls LOG "1"
+	-- connect bluetooth client if applicable. 
+	QUBIE calls BLUETOOTH_COMMUNICATOR "2"
+	-- init and start wifi monitor.
+	QUBIE calls WIFI_MONITOR "3"
+end
+
+
+dynamic_diagram WIFI_MONITOR_INITIALIZATION
+	-- How the wifi monitor initializes itself.
+component
+	scenario "booting: set up keyed_hash and configure wifi settings"
+	action 
+		"1" "Initialize keyed hash with randomly generated key"
+		"2" "Initialize wifi configurations" --frequency range, hopping, etc.
+		"3" "Start running"
+	end
+	object WIFI_MONITOR
+	object QUBIE
+	object KEYED_HASH
+	object FREQUENCY
+	
+	WIFI_MONITOR calls KEYED_HASH "1"
+	WIFI_MONITOR calls FREQUENCY "2" --TODO is this right?
+	QUBIE calls WIFI_MONITOR "3"
+end
+
+dynamic_diagram WIFI_MONITOR_AUTO_HOPPING
+	--the way the wifi monitor acts when auto hopping is enabled
+component
+	scenario "running with auto frequency hopping"
+	action
+		"1" "set the frequency"
+		"2" "scan for device"
+		"3" "report detected device"
+	end
+	object WIFI_MONITOR
+	--TODO:
+		--this is done in a loop 3->1
+		--if no devices are found skip 2 and 3 (1->1)
+	WIFI_MONITOR calls FREQUENCY "1"
+	WIFI_MONITOR calls WIFI_MONITOR "2"
+	WIFI_MONITOR calls QUBIE "3"
+end	
+
+dynamic_diagram REPORT_DETECTED_DEVICE
+	-- the flow from contacting a device to storing the finished observation
+component
+	scenario "DETECTED: contact has been made with a detected wifi device."
+	action
+		"1" "Wifi monitor gets hashed string from keyed_hash"
+		"2" "Wifi monitor reports detected device to qubie"
+		"3" "Qubie creates a contact record"
+		"4" "Qubie publishes the contact record in observations"
+		"5" "Qubie logs the transaction"
+	end	
+	object QUBIE
+	object WIFI_MONITOR
+	object KEYED_HASH
+	object CONTACT_RECORD
+	object OBSERVATIONS
+	object LOG
+	
+	WIFI_MONITOR calls KEYED_HASH "1"
+	WIFI_MONITOR calls QUBIE "2"
+	QUBIE calls CONTACT_RECORD "3"
+	QUBIE calls OBSERVATIONS "4"
+	QUBIE calls LOG "5"
+end
+	
+--TODO QUBIE_STOP (power off: log and flush)
+--TODO QUBIE_PUBLISH_LOG	

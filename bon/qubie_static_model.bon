@@ -1,0 +1,54 @@
+static_diagram QUBIE_TOPLEVEL_VIEW
+	-- This shows a view of the overall architecture of the qubie
+component
+	root class QUBIE
+	class WIFI_MONITOR interfaced
+	class BLUETOOTH_COMMUNICATOR 
+	class BLUETOOTH_CLIENT interfaced
+	class OBSERVATIONS
+	class LOG persistent
+	QUBIE client OBSERVATIONS
+	QUBIE client WIFI_MONITOR
+	QUBIE client LOG
+	WIFI_MONITOR client QUBIE
+	WIFI_MONITOR client KEYED_HASH
+	BLUETOOTH_COMMUNICATOR client QUBIE
+	BLUETOOTH_CLIENT client BLUETOOTH_COMMUNICATOR 
+	--TODO how are observations retrieved from qubie? do they need to be interfaced? persistent?
+end
+	
+static_diagram QUBIE_CONTACT
+	--This shows the relationships between FREQUENCY, CONTACT_RECORD, KEYED_HASH and DEVICE_IDENTIFIER when recording an observation
+component
+	class WIFI_MONITOR interfaced
+	class KEYED_HASH
+	class HASH reused
+	class FREQUENCY
+	class CONTACT_RECORD --immutable
+	class DEVICE_IDENTIFIER --immutable
+	
+	WIFI_MONITOR client  FREQUENCY
+	WIFI_MONITOR client  CONTACT_RECORD
+	CONTACT_RECORD client  FREQUENCY
+	CONTACT_RECORD client  TIME
+	CONTACT_RECORD client  KEYED_HASH
+	KEYED_HASH client  DEVICE_IDENTIFIER
+	KEYED_HASH client HASH
+
+end
+
+--TODO do I need to mention LOG_ENTRY?
+
+static_diagram QUBIE_PERSISTENCE
+	-- This diagram shows which classes are persistent.
+component
+	class LOG persistent
+end
+
+static_diagram QUBIE_REUSED
+	-- This diagram shows which classes are reused	
+component
+	class HASH reused
+	class TIME reused
+end	
+	

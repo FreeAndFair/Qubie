@@ -1,0 +1,245 @@
+static_diagram QUBIE_TOPLEVEL
+component 
+	cluster MAIN
+	component 
+		class QUBIE
+		feature
+			--the following booleans represent possible qubie states
+			booting : BOOLEAN 
+			running : BOOLEAN 
+			stopped : BOOLEAN --qubie has run and stopped
+			status : QUBIE_STATUS
+			
+			observations : OBSERVATIONS
+				require not booting end	
+			wifi_monitor : WIFI_MONITOR
+				require not booting end
+			bt_communicator : BLUETOOTH_COMMUNICATOR
+				require not booting end
+			log : LOG
+				require not booting end
+			start_running 
+				require
+					booting
+				end 
+				ensure
+					running
+					log.logged(Current)
+				end
+			stop_running 
+				require running end
+				ensure
+					stopped
+					log.logged(Current)
+				end
+			record_observation 
+				-> contact_record : CONTACT_RECORD
+				ensure 
+					--TBD delta observations and log 
+					observations.contains(contact_record)
+					log.logged(Current)
+				end
+		initialized
+			log.empty
+			observations.empty
+		constraint
+			old.stopped implies stopped	
+		invariant
+			status.booting <-> booting
+			status.running <-> running
+			status.stopped <-> stopped
+			xor(booting, running, stopped) --TODO verify this is not true for three simultanious states
+			--status_mux: booting xor running xor stopped
+		end	
+		class QUBIE_STATUS
+		feature
+			status : {"booting", "running", "stopped"}
+		end
+	end
+end
+
+
+static_diagram QUBIE_WIFI_MONITOR
+component
+	class WIFI_MONITOR
+	feature 
+		booting : BOOLEAN
+		running : BOOLEAN
+		auto_hopping : BOOLEAN
+		keyed_hash : KEYED_HASH
+		frequency_range : SET[FREQUENCY]
+		frequency : FREQUENCY
+		qubie : QUBIE
+		
+		start
+			require
+				keyed_hash.set
+				not booting
+				not running
+			ensure
+				running
+				qubie.log.logged(Current)
+			end
+		stop 
+			require
+				running
+			ensure
+				not running 
+				qubie.log.logged(Current)
+			end
+		set_frequency 
+			-> the_frequency : FREQUENCY
+			ensure 
+				frequency=the_frequency 
+				qubie.log.logged(Current)	
+			end
+		set_auto_hopping 
+			-> the_truth_value : BOOLEAN
+			ensure 
+				auto_hopping=the_truth_value 
+				qubie.log.logged(Current)	
+			end
+		report_detected_device
+			-> the_mac_address : VALUE
+			-> the_signal_strength : VALUE
+			ensure
+				qubie.observations.contains(CONTACT_RECORD.make(keyed_hash, the_mac_address, the_signal_strength))
+				qubie.log.logged(Current)	
+			end
+		--TODO the keyed hash is never changed after running
+	end
+
+	class FREQUENCY
+	inherit VALUE
+end
+	
+
+
+static_diagram QUBIE_BLUETOOTH_COMMUNICATOR
+component
+	class BLUETOOTH_COMMUNICATOR
+	feature
+		qubie : QUBIE
+		--qubie_status is taken from qubie internal fields
+		subscribed : BOOLEAN
+		client : BLUETOOTH_CLIENT
+		
+		subscribe
+			-> the_bluetooth_client : BLUETOOTH_CLIENT
+			require
+				not old.subscribed
+			ensure
+			delta 
+				client=the_bluetoth_client
+				subscribed
+			end
+		unsubscribe
+			require
+				old.subscribed
+			ensure
+				not subscribed
+			end
+		update_status
+			-> the_status : QUBIE_STATUS
+			ensure qubie.status=the_status end
+	end
+	class BLUETOOTH_CLIENT
+	feature
+		communicator : BLUETOOTH_COMMUNICATOR
+		status : QUBIE_STATUS
+		--TODO command to update qubie status
+	invariant
+		status=communicator.qubie.status
+	end
+end	
+
+
+static_diagram WIFI_DEVICE_IDENTIFIER
+component
+	class DEVICE_IDENTIFIER --immutable
+	feature
+		encrypted : BOOLEAN
+		identifier_string : STRING
+	end
+end
+	
+	
+static_diagram QUBIE_KEYED_HASH
+component
+	class HASH reused
+	class KEYED_HASH
+	feature
+		set : BOOLEAN --write-once
+			-> the_key : VALUE
+			require
+				not set
+			ensure
+				key=the_key
+				set
+				Result=True --TODO add results elsewhere
+			end
+		hashed_string : VALUE
+			->the_string : STRING
+			require set end
+			ensure
+				Result=hash.hash(the_string)
+				--Return the keyed hash of the string
+			end
+	constraint
+		old.set implies set
+	--invariant
+		--for_all a,b:STRING it_holds ((hashed_string(a)=hashed_string(b))=(a=b) )
+		--exists a:STRING such_that (a /= hashed_string(a))
+	end
+	feature NONE
+		key : VALUE --write-once
+		hash : HASH --we know that hash is functional
+	end
+end
+	
+	
+static_diagram QUBIE_CONTACT_RECORDINGS
+component
+	class TIME reused
+	class CONTACT_RECORD --immutable
+	feature
+		device_id : DEVICE_IDENTIFIER
+		contact_time : TIME
+		rssi : VALUE
+		frequency : FREQUNCY
+	end
+	class OBSERVATIONS
+	inherit SET[CONTACT_RECORD]
+end
+
+
+static_diagram QUBIE_LOGGER
+component 
+	class LOG_ENTRY --immutable
+	feature
+		description : STRING
+		time : STRING
+	end
+	class LOG persistent
+	inherit LIST[LOG_ENTRY] 
+	feature
+		entry++ : LOG_ENTRY {^LIST.element} --rename element as entry
+		logged
+			-> object : OBJECT
+			ensure
+				delta element(size)
+				contains(LOG_ENTRY.make(object))
+				Result=True
+			end
+	--constraint
+	--	for_all i:[1..old.size] it_holds old element(i)=element(i)
+	end
+end
+	
+	
+	
+
+
+
+	
+	
