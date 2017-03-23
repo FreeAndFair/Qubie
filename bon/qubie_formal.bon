@@ -170,13 +170,13 @@ component
 	class KEYED_HASH
 	feature
 		set : BOOLEAN --write-once
+		set_key
 			-> the_key : VALUE
 			require
 				not set
 			ensure
 				key=the_key
 				set
-				Result=True --TODO add results elsewhere
 			end
 		hashed_string : VALUE
 			->the_string : STRING
