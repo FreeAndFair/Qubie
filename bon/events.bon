@@ -59,16 +59,8 @@ involves QUBIE, LOG
 event "Qubie starts running"
 involves QUBIE, WIFI_MONITOR
 event "Qubie Stop Running"
-involves "QUBIE, WIFI_MONITOR, BLUETOOTH_COMMUNICATOR
-
-
+involves QUBIE, WIFI_MONITOR, BLUETOOTH_COMMUNICATOR
 --TODO? does LOG needed to be added to (almost) all of the events?
-
-
-
-
-
-
 
 end
 
