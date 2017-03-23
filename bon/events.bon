@@ -1,0 +1,74 @@
+event_chart QUBIE_INCOMMING
+indexing
+  authors: "Leior Varon <leior@freeandfair.us>";
+  created: "Thu Mar 23 10:49:36 PST 2016";
+explanation
+  "External events triggering Qubie behavior."
+part
+  "1/1"
+event "Power On"
+involves TBD --TODO? does this mean that qubie is interfaced? in general this effects all modules
+event "Wifi Device Detected"
+involves WIFI_MONITOR, OBSERVATIONS --TODO? do I need to include indirectly involved classes such as CONTACT_RECORD, KEYED HASH
+event "Bluetooth client found"
+involves BLUETOOTH_CLIENT, BLUETOOTH_COMMUNICATOR --TODO? , WIFI_MONITOR
+event "Bluetooth client not found"
+involves BLUETOOTH_CLIENT, BLUETOOTH_COMMUNICATOR --TODO? , WIFI_MONITOR
+event "Bluetooth client sets auto_hopping value"
+involves BLUETOOTH_CLIENT, BLUETOOTH_COMMUNICATOR
+event "Bluetooth client instructs Qubie to stop"
+involves BLUETOOTH_CLIENT, BLUETOOTH_COMMUNICATOR, QUBIE
+event "Bluetooth client unsubscribes"
+involves BLUETOOTH_CLIENT, BLUETOOTH_COMMUNICATOR
+event "Power Off"
+involves LOG
+end
+
+
+
+event_chart QUBIE_OUTGOING
+indexing
+  authors: "Leior Varon <leior@freeandfair.us>";
+  created: "Thu Mar 23 10:49:36 PST 2016";
+explanation
+  "External events triggered by Qubie behavior."
+part
+  "1/1"
+event "Create new log"
+involves LOG  
+event "Looking for Bluetooth Client"
+involves BLUETOOTH_COMMUNICATOR
+event "Boot Wifi Monitor Success"
+involves WIFI_MONITOR, QUBIE 
+event "Boot Wifi Monitor Failure"
+involves WIFI_MONITOR, QUBIE 
+event "Keyed Hash Set with random key"
+involves WIFI_MONITOR, KEYED_HASH
+event "wifi Monitor Auto-Hopping Switched On"
+involves WIFI_MONITOR --TODO? , BLUETOOTH_COMMUNICATOR, BLUETOOTH_CLIENT
+event "wifi Monitor Auto-Hopping Switched Off"
+involves WIFI_MONITOR --TODO? , BLUETOOTH_COMMUNICATOR, BLUETOOTH_CLIENT
+event "Wifi Monitor sets Frequency"
+involves WIFI_MONITOR, FREQUENCY
+event "Wifi Monitor searches for devices on the Frequency"
+involves WIFI_MONITOR
+event "Qubie boot Successful"
+involves QUBIE, LOG
+event "Qubie boot Failed"
+involves QUBIE, LOG
+event "Qubie starts running"
+involves QUBIE, WIFI_MONITOR
+event "Qubie Stop Running"
+involves "QUBIE, WIFI_MONITOR, BLUETOOTH_COMMUNICATOR
+
+
+--TODO? does LOG needed to be added to (almost) all of the events?
+
+
+
+
+
+
+
+end
+
