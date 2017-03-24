@@ -2,12 +2,20 @@ static_diagram QUBIE_TOPLEVEL
 component 
 	cluster MAIN
 	component 
+	    class QUBIE_STATUS
+	    inherit VALUE
+	    invariant
+	      Current member_of {booting, running, stopped}
+	    end
 		class QUBIE
 		feature
 			--the following booleans represent possible qubie states
 			booting : BOOLEAN 
+			  ensure Result = (status = booting) end
 			running : BOOLEAN 
+			  ensure Result = (status = running) end
 			stopped : BOOLEAN --qubie has run and stopped
+			  ensure Result = (status = stopped) end
 			status : QUBIE_STATUS
 			
 			observations : OBSERVATIONS
@@ -17,44 +25,45 @@ component
 			bt_communicator : BLUETOOTH_COMMUNICATOR
 				require not booting end
 			log : LOG
-				require not booting end
-			start_running 
+				require 
+				  not booting --TODO? is this require needed if the log is constructed as part of the constructor?
+				end
+			start_running -- : Void 
 				require
 					booting
-				end 
 				ensure
-					running
-					log.logged(Current)
+					running;
+					log.logged(Current);
 				end
 			stop_running 
-				require running end
+				require running
 				ensure
-					stopped
-					log.logged(Current)
+					stopped;
+					log.logged(Current);
+				end
+			update_status	--mapping to allow external acces to change states
+				-> the_status : QUBIE_STATUS
+				require
+					the_status member_of {running, stopped};  --for now don't allow any external input to change the status to booting
+				ensure
+					(the_status = running) -> start_running;
+					(the_status = stopped) -> stop_running;
 				end
 			record_observation 
 				-> contact_record : CONTACT_RECORD
 				ensure 
-					--TBD delta observations and log 
-					observations.contains(contact_record)
-					log.logged(Current)
+					delta {observations, log}; --if observations is a sequence/list we could limit to observations(size)
+					observations.contains(contact_record);
+					log.logged(Current);
 				end
-		initialized
-			log.empty
-			observations.empty
-		constraint
-			old.stopped implies stopped	
-		invariant
-			status.booting <-> booting
-			status.running <-> running
-			status.stopped <-> stopped
-			xor(booting, running, stopped) --TODO verify this is not true for three simultanious states
-			--status_mux: booting xor running xor stopped
+			initialized --TODO get consensus on syntax
+				ensure 
+					log.empty;
+					observations.empty;
+				end
+--		constraint
+--			old(stopped) implies stopped	
 		end	
-		class QUBIE_STATUS
-		feature
-			status : {"booting", "running", "stopped"}
-		end
 	end
 end
 
@@ -73,44 +82,49 @@ component
 		
 		start
 			require
-				keyed_hash.set
-				not booting
+				keyed_hash.set;
+				not booting;
 				not running
 			ensure
-				running
+				--delta {Current, qubie.observations, qubie.log};
+				running;
 				qubie.log.logged(Current)
 			end
 		stop 
 			require
-				running
+				running;
 			ensure
-				not running 
-				qubie.log.logged(Current)
+				not running; 
+				qubie.log.logged(Current);
 			end
 		set_frequency 
 			-> the_frequency : FREQUENCY
 			ensure 
-				frequency=the_frequency 
-				qubie.log.logged(Current)	
+				delta {frequency, qubie.log};
+				frequency=the_frequency; 
+				qubie.log.logged(Current);	
 			end
 		set_auto_hopping 
 			-> the_truth_value : BOOLEAN
 			ensure 
-				auto_hopping=the_truth_value 
-				qubie.log.logged(Current)	
+				delta {auto_hopping, qubie.log};
+				auto_hopping=the_truth_value; 
+				qubie.log.logged(Current);	
 			end
 		report_detected_device
 			-> the_mac_address : VALUE
 			-> the_signal_strength : VALUE
 			ensure
-				qubie.observations.contains(CONTACT_RECORD.make(keyed_hash, the_mac_address, the_signal_strength))
-				qubie.log.logged(Current)	
+				delta {qubie.observations, qubie.log};
+				qubie.observations.contains(CONTACT_RECORD.make(keyed_hash, the_mac_address, the_signal_strength));
+				qubie.log.logged(Current);	
 			end
 		--TODO the keyed hash is never changed after running
 	end
 
 	class FREQUENCY
 	inherit VALUE
+	end
 end
 	
 
@@ -122,34 +136,41 @@ component
 		qubie : QUBIE
 		--qubie_status is taken from qubie internal fields
 		subscribed : BOOLEAN
-		client : BLUETOOTH_CLIENT
+		bt_client : BLUETOOTH_CLIENT
 		
 		subscribe
 			-> the_bluetooth_client : BLUETOOTH_CLIENT
 			require
-				not old.subscribed
+				not subscribed;
 			ensure
-			delta 
-				client=the_bluetoth_client
-				subscribed
+				delta {bit_client, subscribed};
+				bt_client=the_bluetooth_client;
+				subscribed;
 			end
 		unsubscribe
 			require
-				old.subscribed
+				subscribed;
 			ensure
-				not subscribed
+				delta {bit_client, subscribed};
+				not subscribed;
 			end
-		update_status
-			-> the_status : QUBIE_STATUS
-			ensure qubie.status=the_status end
+		update_qubie_status
+			-> the_status : VALUE
+			require
+				the_status = stopped; --for now the only legal command is to stop running
+			ensure 
+				qubie.update_status(the_status); 
+			end
 	end
 	class BLUETOOTH_CLIENT
 	feature
 		communicator : BLUETOOTH_COMMUNICATOR
 		status : QUBIE_STATUS
-		--TODO command to update qubie status
+		update_qubie_status
+			-> the_status : QUBIE_STATUS
 	invariant
-		status=communicator.qubie.status
+		status=communicator.qubie.status;
+		update_qubie_status=communicator.update_qubie_status; --TODO? is this correct syntax? do I need to manually add require/ensure fields?
 	end
 end	
 
@@ -175,28 +196,28 @@ component
 			require
 				not set
 			ensure
-				key=the_key
+				delta {set, key};
+				key=the_key;
 				set
 			end
 		hashed_string : VALUE
 			->the_string : STRING
-			require set end
+			require set
 			ensure
 				Result=hash.hash(the_string)
 				--Return the keyed hash of the string
 			end
-	constraint
-		old.set implies set
+--	constraint
+--		old.set implies set
 	--invariant
 		--for_all a,b:STRING it_holds ((hashed_string(a)=hashed_string(b))=(a=b) )
 		--exists a:STRING such_that (a /= hashed_string(a))
-	end
-	feature NONE
+--	end
+--	feature NONE
 		key : VALUE --write-once
 		hash : HASH --we know that hash is functional
 	end
 end
-	
 	
 static_diagram QUBIE_CONTACT_RECORDINGS
 component
@@ -208,8 +229,7 @@ component
 		rssi : VALUE
 		frequency : FREQUNCY
 	end
-	class OBSERVATIONS
-	inherit SET[CONTACT_RECORD]
+	class OBSERVATIONS inherit SET[CONTACT_RECORD] end --TODO make this a sequence, or perhaps list
 end
 
 
@@ -217,19 +237,19 @@ static_diagram QUBIE_LOGGER
 component 
 	class LOG_ENTRY --immutable
 	feature
-		description : STRING
+		message : STRING
 		time : STRING
 	end
 	class LOG persistent
 	inherit LIST[LOG_ENTRY] 
 	feature
-		entry++ : LOG_ENTRY {^LIST.element} --rename element as entry
+--		entry++ : LOG_ENTRY {^LIST.element} --rename element as entry
 		logged
-			-> object : OBJECT
+			-> entry : OBJECT
 			ensure
-				delta element(size)
-				contains(LOG_ENTRY.make(object))
-				Result=True
+				delta element(size);
+				contains(LOG_ENTRY.make(entry));
+				--Result=True
 			end
 	--constraint
 	--	for_all i:[1..old.size] it_holds old element(i)=element(i)
