@@ -2,21 +2,76 @@ static_diagram QUBIE_TOPLEVEL
 component 
 	cluster MAIN
 	component 
-	    class QUBIE_STATUS
+	    class QUBIE_STATE
 	    inherit VALUE
 	    invariant
-	      Current member_of {booting, running, stopped}
+	      Current member_of {power_on, booting, running, stopped, off}
 	    end
-		class QUBIE
-		feature
+	    deferred class QUBIE_INTERFACE
+	    feature
 			--the following booleans represent possible qubie states
 			booting : BOOLEAN 
-			  ensure Result = (status = booting) end
+			  ensure Result = (state = booting) end
 			running : BOOLEAN 
-			  ensure Result = (status = running) end
+			  ensure Result = (state = running) end
 			stopped : BOOLEAN --qubie has run and stopped
-			  ensure Result = (status = stopped) end
-			status : QUBIE_STATUS
+			  ensure Result = (state = stopped) end
+			state : QUBIE_STATE
+			deferred log : LOG
+			deferred qubie : QUBIE_INTERFACE 
+
+			start_booting 
+				require
+					power_on; 
+					--power_on or stopped; //currently soft reset is not allowed
+				ensure
+					state = booting;
+					log.logged(Current);
+				end
+			start_running -- : Void 
+				require
+					booting
+				ensure
+					state = running;
+					log.logged(Current);
+				end
+			stop_running 
+				require running
+				ensure
+					state = stopped;
+					log.logged(Current);
+				end
+			power_off
+				ensure
+					state = off;
+					log.logged(Current);
+					log.flush;
+				end
+			publish_log
+				ensure
+					log.publish
+				end
+			
+			update_state	--mapping to allow external acces to change states
+				-> the_state : QUBIE_STATE
+				require
+					the_state member_of legal_state;
+				ensure
+					(the_state = booting) -> qubie.start_booting;
+					(the_state = running) -> qubie.start_running;
+					(the_state = stopped) -> qubie.stop_running;
+					(the_state = off) -> qubie.power_off;
+				end
+				
+	    	legal_states : SET[QUBIE_STATE]
+	    		ensure
+	    			Result = {booting, running, stopped, off};
+	    		end
+	    end
+
+		effective class QUBIE
+		inherit QUBIE_INTERFACE
+		feature
 			
 			observations : OBSERVATIONS
 				require not booting end	
@@ -24,31 +79,13 @@ component
 				require not booting end
 			bt_communicator : BLUETOOTH_COMMUNICATOR
 				require not booting end
-			log : LOG
-				require 
-				  not booting --TODO? is this require needed if the log is constructed as part of the constructor?
-				end
-			start_running -- : Void 
-				require
-					booting
-				ensure
-					running;
-					log.logged(Current);
-				end
-			stop_running 
-				require running
-				ensure
-					stopped;
-					log.logged(Current);
-				end
-			update_status	--mapping to allow external acces to change states
-				-> the_status : QUBIE_STATUS
-				require
-					the_status member_of {running, stopped};  --for now don't allow any external input to change the status to booting
-				ensure
-					(the_status = running) -> start_running;
-					(the_status = stopped) -> stop_running;
-				end
+			effective log : LOG
+			effective qubie : QUBIE 
+				ensure Result = Current; end
+
+			redefined legal_states : SET[QUBIE_STATE]
+				ensure Result = {running, stopped}; end
+
 			record_observation 
 				-> contact_record : CONTACT_RECORD
 				ensure 
@@ -61,6 +98,7 @@ component
 					log.empty;
 					observations.empty;
 				end
+
 --		constraint
 --			old(stopped) implies stopped	
 		end	
@@ -68,9 +106,9 @@ component
 end
 
 
-static_diagram QUBIE_WIFI_MONITOR
+static_diagram QUBIE_MONITOR
 component
-	class WIFI_MONITOR
+	class MONITOR
 	feature 
 		booting : BOOLEAN
 		running : BOOLEAN
@@ -84,11 +122,11 @@ component
 			require
 				keyed_hash.set;
 				not booting;
-				not running
+				not running;
 			ensure
 				--delta {Current, qubie.observations, qubie.log};
 				running;
-				qubie.log.logged(Current)
+				qubie.log.logged(Current);
 			end
 		stop 
 			require
@@ -121,20 +159,39 @@ component
 			end
 		--TODO the keyed hash is never changed after running
 	end
-
+	
 	class FREQUENCY
 	inherit VALUE
+	end
+	class WIFI_MONITOR
+	inherit MONITOR
 	end
 end
 	
 
 
-static_diagram QUBIE_BLUETOOTH_COMMUNICATOR
+static_diagram QUBIE_COMMUNICATOR
 component
-	class BLUETOOTH_COMMUNICATOR
+	effective class COMMUNICATOR
+	inherit QUBIE_INTERFACE
 	feature
-		qubie : QUBIE
-		--qubie_status is taken from qubie internal fields
+		effective qubie : QUBIE
+		effective log : LOG
+			ensure Result = qubie.log; end
+		qubie_state : QUBIE_STATE
+			ensure
+				Result=qubie.state;
+			end
+		redefined update_qubie_state {^QUBIE_INTERFACE.update_state}
+			-> the_state : QUBIE_STATE
+	
+		redefined legal_states : SET[QUBIE_STATE]
+			ensure Result = {stopped, off}; end
+
+	end
+	class BLUETOOTH_COMMUNICATOR
+	inherit COMMUNICATOR
+	feature
 		subscribed : BOOLEAN
 		bt_client : BLUETOOTH_CLIENT
 		
@@ -143,7 +200,7 @@ component
 			require
 				not subscribed;
 			ensure
-				delta {bit_client, subscribed};
+				delta {bt_client, subscribed};
 				bt_client=the_bluetooth_client;
 				subscribed;
 			end
@@ -151,17 +208,12 @@ component
 			require
 				subscribed;
 			ensure
-				delta {bit_client, subscribed};
+				delta {bt_client, subscribed};
 				not subscribed;
 			end
-		update_qubie_status
-			-> the_status : VALUE
-			require
-				the_status = stopped; --for now the only legal command is to stop running
-			ensure 
-				qubie.update_status(the_status); 
-			end
 	end
+	--TODO class PHYSICAL_COMMUNICATOR inherit COMMUNICATOR for buttons+leds
+	--TODO TOUCH_SCREEN inherit COMMUNICATOR
 	class BLUETOOTH_CLIENT
 end	
 
@@ -240,8 +292,9 @@ component
 			ensure
 				delta element(size);
 				contains(LOG_ENTRY.make(entry));
-				--Result=True
 			end
+		flush --TODO
+		publish --TODO
 	--constraint
 	--	for_all i:[1..old.size] it_holds old element(i)=element(i)
 	end

@@ -18,9 +18,9 @@ component
 	--qubie begins running
 	QUBIE calls running "3"
 	--qubie is stopped
-	BLUETOOTH_COMMUNICATOR calls QUBIE "4" --TODO should this be bt_client?
+	BLUETOOTH_COMMUNICATOR calls QUBIE "4" 
 	--qubie is powered off
-	--TODO "5"
+	QUBIE calls power_off "5"
 	--TODO all states can transition to final state
 end	
 
