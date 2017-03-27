@@ -163,15 +163,6 @@ component
 			end
 	end
 	class BLUETOOTH_CLIENT
-	feature
-		communicator : BLUETOOTH_COMMUNICATOR
-		status : QUBIE_STATUS
-		update_qubie_status
-			-> the_status : QUBIE_STATUS
-	invariant
-		status=communicator.qubie.status;
-		update_qubie_status=communicator.update_qubie_status; --TODO? is this correct syntax? do I need to manually add require/ensure fields?
-	end
 end	
 
 
