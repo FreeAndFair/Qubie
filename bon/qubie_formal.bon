@@ -26,32 +26,35 @@ component
 					--power_on or stopped; //currently soft reset is not allowed
 				ensure
 					state = booting;
-					log.logged(Current);
+					publish_action(Current);
 				end
 			start_running -- : Void 
 				require
 					booting
 				ensure
 					state = running;
-					log.logged(Current);
+					publish_action(Current);
 				end
 			stop_running 
 				require running
 				ensure
 					state = stopped;
-					log.logged(Current);
+					publish_action(Current);
 				end
 			power_off
 				ensure
 					state = off;
-					log.logged(Current);
+					publish_action(Current);
 					log.flush;
 				end
 			publish_log
 				ensure
-					log.publish
+					delta log;
+					log.publish;
 				end
-			
+			deferred publish_action	
+				-> information : OBJECT
+				
 			update_state	--mapping to allow external acces to change states
 				-> the_state : QUBIE_STATE
 				require
@@ -83,6 +86,14 @@ component
 			effective qubie : QUBIE 
 				ensure Result = Current; end
 
+			effective publish_action
+				-> information : OBJECT
+				ensure
+					log.logged(Current);
+					bt_communicator.publish_action(Current);
+				end
+				
+
 			redefined legal_states : SET[QUBIE_STATE]
 				ensure Result = {running, stopped}; end
 
@@ -91,7 +102,7 @@ component
 				ensure 
 					delta {observations, log}; --if observations is a sequence/list we could limit to observations(size)
 					observations.contains(contact_record);
-					log.logged(Current);
+					publish_action(Current)
 				end
 			initialized --TODO get consensus on syntax
 				ensure 
@@ -172,7 +183,7 @@ end
 
 static_diagram QUBIE_COMMUNICATOR
 component
-	effective class COMMUNICATOR
+	deferred class COMMUNICATOR
 	inherit QUBIE_INTERFACE
 	feature
 		effective qubie : QUBIE
@@ -189,18 +200,18 @@ component
 			ensure Result = {stopped, off}; end
 
 	end
-	class BLUETOOTH_COMMUNICATOR
+	effective class BLUETOOTH_COMMUNICATOR
 	inherit COMMUNICATOR
 	feature
 		subscribed : BOOLEAN
 		bt_client : BLUETOOTH_CLIENT
-		
+			require subscribed; end
 		subscribe
 			-> the_bluetooth_client : BLUETOOTH_CLIENT
 			require
 				not subscribed;
 			ensure
-				delta {bt_client, subscribed};
+				delta {bt_client, subscribed}; --TODO? is this accurate taking into account that the bt_client, once subscribed, can modify qubie states etc.?
 				bt_client=the_bluetooth_client;
 				subscribed;
 			end
@@ -211,22 +222,15 @@ component
 				delta {bt_client, subscribed};
 				not subscribed;
 			end
+		effective publish_action
+			-> information : OBJECT
+			--TODO ensure if subscribed -> *notify client* end
 	end
 	--TODO class PHYSICAL_COMMUNICATOR inherit COMMUNICATOR for buttons+leds
 	--TODO TOUCH_SCREEN inherit COMMUNICATOR
 	class BLUETOOTH_CLIENT
 end	
 
-
-static_diagram WIFI_DEVICE_IDENTIFIER
-component
-	class DEVICE_IDENTIFIER --immutable
-	feature
-		encrypted : BOOLEAN
-		identifier_string : STRING
-	end
-end
-	
 	
 static_diagram QUBIE_KEYED_HASH
 component
@@ -237,17 +241,17 @@ component
 		set_key
 			-> the_key : VALUE
 			require
-				not set
+				not set;
 			ensure
 				delta {set, key};
 				key=the_key;
-				set
+				set;
 			end
 		hashed_string : VALUE
 			->the_string : STRING
-			require set
+			require set;
 			ensure
-				Result=hash.hash(the_string)
+				Result=hash.hash(the_string);
 				--Return the keyed hash of the string
 			end
 --	constraint
@@ -264,6 +268,11 @@ end
 	
 static_diagram QUBIE_CONTACT_RECORDINGS
 component
+	class DEVICE_IDENTIFIER --immutable
+	feature
+		encrypted : BOOLEAN
+		identifier_string : STRING
+	end
 	class TIME reused
 	class CONTACT_RECORD --immutable
 	feature
