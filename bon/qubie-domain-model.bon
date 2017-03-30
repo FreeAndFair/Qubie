@@ -66,7 +66,7 @@ constraint
  \ communicator are used for the entirety of the run time.",
   "A human-readable version of every observation is recorded in the log.",
   "All important events (startup, shutdown, error conditions) are recorded in the log.",
-  "Once a Qubie is stopped, it cannot be restarted."
+  "Once a Qubie is stopped, it cannot be restarted." --TODO? should it be allowed to restart using a new set of log, observations, etc.
 end
 
 class_chart WIFI_MONITOR

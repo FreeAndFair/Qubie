@@ -5,24 +5,28 @@ component
 	    class QUBIE_STATE
 	    inherit VALUE
 	    invariant
-	      Current member_of {power_on, booting, running, stopped, off}
+	      Current member_of {powered_on, booting, running, stopped, powered_off}
 	    end
 	    deferred class QUBIE_INTERFACE
 	    feature
 			--the following booleans represent possible qubie states
+			powered_on : BOOLEAN
+				ensure Result = (state = powered_on) end
 			booting : BOOLEAN 
-			  ensure Result = (state = booting) end
+				ensure Result = (state = booting) end
 			running : BOOLEAN 
-			  ensure Result = (state = running) end
+				ensure Result = (state = running) end
 			stopped : BOOLEAN --qubie has run and stopped
-			  ensure Result = (state = stopped) end
+				ensure Result = (state = stopped) end
+			powered_off : BOOLEAN
+				ensure Result = (state = powered_off) end
 			state : QUBIE_STATE
 			deferred log : LOG
 			deferred qubie : QUBIE_INTERFACE 
 
 			start_booting 
 				require
-					power_on; 
+					powered_on; 
 					--power_on or stopped; //currently soft reset is not allowed
 				ensure
 					state = booting;
@@ -43,9 +47,9 @@ component
 				end
 			power_off
 				ensure
-					state = off;
+					state = powered_off;
 					publish_action(Current);
-					log.flush;
+					--log.flushed;  --TODO make sure log is flushed after the action is published
 				end
 			publish_log
 				ensure
@@ -58,17 +62,17 @@ component
 			update_state	--mapping to allow external acces to change states
 				-> the_state : QUBIE_STATE
 				require
-					the_state member_of legal_state;
+					the_state member_of legal_update_state;
 				ensure
 					(the_state = booting) -> qubie.start_booting;
 					(the_state = running) -> qubie.start_running;
 					(the_state = stopped) -> qubie.stop_running;
-					(the_state = off) -> qubie.power_off;
+					(the_state = powered_off) -> qubie.power_off;
 				end
 				
-	    	legal_states : SET[QUBIE_STATE]
+	    	legal_update_states : SET[QUBIE_STATE]
 	    		ensure
-	    			Result = {booting, running, stopped, off};
+	    			Result = {booting, running, stopped, powered_off};
 	    		end
 	    end
 
@@ -94,7 +98,7 @@ component
 				end
 				
 
-			redefined legal_states : SET[QUBIE_STATE]
+			redefined legal_update_states : SET[QUBIE_STATE]
 				ensure Result = {running, stopped}; end
 
 			record_observation 
@@ -121,7 +125,8 @@ static_diagram QUBIE_MONITOR
 component
 	class MONITOR
 	feature 
-		booting : BOOLEAN
+		booted : BOOLEAN
+			require keyed_hash.set; end
 		running : BOOLEAN
 		auto_hopping : BOOLEAN
 		keyed_hash : KEYED_HASH
@@ -131,34 +136,33 @@ component
 		
 		start
 			require
-				keyed_hash.set;
-				not booting;
+				booted;
 				not running;
 			ensure
 				--delta {Current, qubie.observations, qubie.log};
 				running;
-				qubie.log.logged(Current);
+				qubie.publish_action(Current);
 			end
 		stop 
 			require
 				running;
 			ensure
 				not running; 
-				qubie.log.logged(Current);
+				qubie.publish_action(Current);
 			end
 		set_frequency 
 			-> the_frequency : FREQUENCY
 			ensure 
 				delta {frequency, qubie.log};
 				frequency=the_frequency; 
-				qubie.log.logged(Current);	
+				qubie.publish_action(Current);	
 			end
 		set_auto_hopping 
 			-> the_truth_value : BOOLEAN
 			ensure 
 				delta {auto_hopping, qubie.log};
 				auto_hopping=the_truth_value; 
-				qubie.log.logged(Current);	
+				qubie.publish_action(Current);	
 			end
 		report_detected_device
 			-> the_mac_address : VALUE
@@ -166,7 +170,7 @@ component
 			ensure
 				delta {qubie.observations, qubie.log};
 				qubie.observations.contains(CONTACT_RECORD.make(keyed_hash, the_mac_address, the_signal_strength));
-				qubie.log.logged(Current);	
+				qubie.publish_action(Current);	
 			end
 		--TODO the keyed hash is never changed after running
 	end
@@ -196,8 +200,8 @@ component
 		redefined update_qubie_state {^QUBIE_INTERFACE.update_state}
 			-> the_state : QUBIE_STATE
 	
-		redefined legal_states : SET[QUBIE_STATE]
-			ensure Result = {stopped, off}; end
+		redefined legal_update_states : SET[QUBIE_STATE]
+			ensure Result = {stopped, powered_off}; end
 
 	end
 	effective class BLUETOOTH_COMMUNICATOR
@@ -229,6 +233,10 @@ component
 	--TODO class PHYSICAL_COMMUNICATOR inherit COMMUNICATOR for buttons+leds
 	--TODO TOUCH_SCREEN inherit COMMUNICATOR
 	class BLUETOOTH_CLIENT
+	feature
+		bt_communicator : BLUETOOTH_COMMUNICATOR
+		--TODO method with which the communicator can notify the client
+	end
 end	
 
 	
@@ -243,15 +251,15 @@ component
 			require
 				not set;
 			ensure
-				delta {set, key};
-				key=the_key;
+				delta {set, hash, key};
+				key = the_key;
 				set;
 			end
 		hashed_string : VALUE
-			->the_string : STRING
+			->the_string : VALUE
 			require set;
 			ensure
-				Result=hash.hash(the_string);
+				Result = hash.hash(the_string);
 				--Return the keyed hash of the string
 			end
 --	constraint
@@ -266,12 +274,12 @@ component
 	end
 end
 	
-static_diagram QUBIE_CONTACT_RECORDINGS
+static_diagram QUBIE_OBSERVATIONS
 component
 	class DEVICE_IDENTIFIER --immutable
 	feature
 		encrypted : BOOLEAN
-		identifier_string : STRING
+		identifier_string : VALUE
 	end
 	class TIME reused
 	class CONTACT_RECORD --immutable
@@ -302,8 +310,14 @@ component
 				delta element(size);
 				contains(LOG_ENTRY.make(entry));
 			end
-		flush --TODO
-		publish --TODO
+--		flushed : BOOLEAN
+--		flush
+--			ensure flushed; end
+--		publish : LOG
+--			ensure 
+--				flushed;
+--				Result = Current;
+--			end
 	--constraint
 	--	for_all i:[1..old.size] it_holds old element(i)=element(i)
 	end
