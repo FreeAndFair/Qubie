@@ -23,6 +23,8 @@ component
 			state : QUBIE_STATE
 			deferred log : LOG
 			deferred qubie : QUBIE_INTERFACE 
+			deferred action_published : BOOLEAN
+				-> entry : OBJECT
 
 			start_booting 
 				require
@@ -30,44 +32,40 @@ component
 					--power_on or stopped; //currently soft reset is not allowed
 				ensure
 					state = booting;
-					publish_action(Current);
+					action_published(state);
 				end
 			start_running -- : Void 
 				require
 					booting
 				ensure
 					state = running;
-					publish_action(Current);
+					action_published(state);
 				end
 			stop_running 
 				require running
 				ensure
 					state = stopped;
-					publish_action(Current);
+					action_published(state);
 				end
 			power_off
 				ensure
 					state = powered_off;
-					publish_action(Current);
-					--log.flushed;  --TODO make sure log is flushed after the action is published
-				end
-			publish_log
-				ensure
-					delta log;
-					log.publish;
+					action_published(state);
 				end
 			deferred publish_action	
-				-> information : OBJECT
+				-> the_state : QUBIE_STATE
+				ensure action_published(the_state); end
 				
 			update_state	--mapping to allow external acces to change states
 				-> the_state : QUBIE_STATE
 				require
 					the_state member_of legal_update_state;
 				ensure
-					(the_state = booting) -> qubie.start_booting;
-					(the_state = running) -> qubie.start_running;
-					(the_state = stopped) -> qubie.stop_running;
-					(the_state = powered_off) -> qubie.power_off;
+					the_state = qubie.state;
+--					(the_state = booting) -> qubie.start_booting;
+--					(the_state = running) -> qubie.start_running;
+--					(the_state = stopped) -> qubie.stop_running;
+--					(the_state = powered_off) -> qubie.power_off;
 				end
 				
 	    	legal_update_states : SET[QUBIE_STATE]
@@ -89,24 +87,28 @@ component
 			effective log : LOG
 			effective qubie : QUBIE 
 				ensure Result = Current; end
-
-			effective publish_action
-				-> information : OBJECT
+			effective action_published : BOOLEAN
+				-> the_state : QUBIE_STATE
 				ensure
-					log.logged(Current);
-					bt_communicator.publish_action(Current);
+					Result = log.logged(Current) and 
+						(bt_communicator.subscribed -> bt_communicator.action_published(the_state));		
+				end
+			effective publish_action
+				-> the_state : QUBIE_STATE
+				ensure
+					action_published(the_state);
 				end
 				
 
 			redefined legal_update_states : SET[QUBIE_STATE]
-				ensure Result = {running, stopped}; end
+				ensure Result = {stopped, powered_off}; end
 
 			record_observation 
 				-> contact_record : CONTACT_RECORD
 				ensure 
 					delta {observations, log}; --if observations is a sequence/list we could limit to observations(size)
 					observations.contains(contact_record);
-					publish_action(Current)
+					log.logged(Current)
 				end
 			initialized --TODO get consensus on syntax
 				ensure 
@@ -125,44 +127,44 @@ static_diagram QUBIE_MONITOR
 component
 	class MONITOR
 	feature 
-		booted : BOOLEAN
+		wifi_booted : BOOLEAN
 			require keyed_hash.set; end
-		running : BOOLEAN
+		wifi_running : BOOLEAN
 		auto_hopping : BOOLEAN
 		keyed_hash : KEYED_HASH
 		frequency_range : SET[FREQUENCY]
 		frequency : FREQUENCY
 		qubie : QUBIE
 		
-		start
+		start_wifi
 			require
 				booted;
 				not running;
 			ensure
 				--delta {Current, qubie.observations, qubie.log};
 				running;
-				qubie.publish_action(Current);
+				qubie.log.logged(Current);
 			end
-		stop 
+		stop_wifi
 			require
 				running;
 			ensure
 				not running; 
-				qubie.publish_action(Current);
+				qubie.log.logged(Current);
 			end
 		set_frequency 
 			-> the_frequency : FREQUENCY
 			ensure 
 				delta {frequency, qubie.log};
 				frequency=the_frequency; 
-				qubie.publish_action(Current);	
+				qubie.log.logged(Current);	
 			end
 		set_auto_hopping 
 			-> the_truth_value : BOOLEAN
 			ensure 
 				delta {auto_hopping, qubie.log};
 				auto_hopping=the_truth_value; 
-				qubie.publish_action(Current);	
+				qubie.log.logged(Current);	
 			end
 		report_detected_device
 			-> the_mac_address : VALUE
@@ -170,7 +172,7 @@ component
 			ensure
 				delta {qubie.observations, qubie.log};
 				qubie.observations.contains(CONTACT_RECORD.make(keyed_hash, the_mac_address, the_signal_strength));
-				qubie.publish_action(Current);	
+				qubie.log.logged(Current);	
 			end
 		--TODO the keyed hash is never changed after running
 	end
@@ -210,6 +212,13 @@ component
 		subscribed : BOOLEAN
 		bt_client : BLUETOOTH_CLIENT
 			require subscribed; end
+		action_published : BOOLEAN
+			-> the_state : QUBIE_STATE
+			require
+				subscribed;
+			ensure
+				bt_client.received(the_state);
+			end
 		subscribe
 			-> the_bluetooth_client : BLUETOOTH_CLIENT
 			require
@@ -227,15 +236,29 @@ component
 				not subscribed;
 			end
 		effective publish_action
-			-> information : OBJECT
+			-> the_state : QUBIE_STATE
+			ensure 
+				action_published(the_state);
+			end
 			--TODO ensure if subscribed -> *notify client* end
 	end
 	--TODO class PHYSICAL_COMMUNICATOR inherit COMMUNICATOR for buttons+leds
 	--TODO TOUCH_SCREEN inherit COMMUNICATOR
-	class BLUETOOTH_CLIENT
+	class BLUETOOTH_CLIENT 
 	feature
 		bt_communicator : BLUETOOTH_COMMUNICATOR
-		--TODO method with which the communicator can notify the client
+		received : BOOLEAN
+			-> the_state : QUBIE_STATE
+		receive
+			-> the_state : QUBIE_STATE
+			ensure received(the_state); end
+		update_qubie_state
+			the_state : QUBIE_STATE
+			require
+				bt_communicator.bt_client = Current; --TODO? is this obvious?
+			ensure 
+				received(the_state); 
+			end
 	end
 end	
 
@@ -289,7 +312,14 @@ component
 		rssi : VALUE
 		frequency : FREQUNCY
 	end
-	class OBSERVATIONS inherit SET[CONTACT_RECORD] end --TODO make this a sequence, or perhaps list
+	class OBSERVATIONS inherit SET[CONTACT_RECORD]  --TODO make this a sequence, or perhaps list
+	feature
+		empty : BOOLEAN
+			ensure Result = (size = 0); end
+		contains : BOOLEAN
+			-> the_contact_record : CONTACT_RECORD
+			ensure the_contact_record member_of Current; end
+	end
 end
 
 
@@ -304,22 +334,18 @@ component
 	inherit LIST[LOG_ENTRY] 
 	feature
 --		entry++ : LOG_ENTRY {^LIST.element} --rename element as entry
-		logged
+		empty : BOOLEAN
+			ensure Result = (size = 0); end
+		logged : BOOLEAN
 			-> entry : OBJECT
 			ensure
 				delta element(size);
-				contains(LOG_ENTRY.make(entry));
+			end			
+		log
+			-> entry : OBJECT
+			ensure
+				logged(entry);
 			end
---		flushed : BOOLEAN
---		flush
---			ensure flushed; end
---		publish : LOG
---			ensure 
---				flushed;
---				Result = Current;
---			end
-	--constraint
-	--	for_all i:[1..old.size] it_holds old element(i)=element(i)
 	end
 end
 	

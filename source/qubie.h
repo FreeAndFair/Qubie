@@ -2,7 +2,8 @@
 
 #include "qubie_t.h"
 
-
+//constructor
+qubie_t make_qubie(qubie_t *qubie);
 
 //@ ensure Result == {running, stopped}
 static const state_t legal_update_states[3] = {RUNNING, STOPPED, POWERED_OFF};
@@ -18,22 +19,23 @@ static const state_t legal_update_states[3] = {RUNNING, STOPPED, POWERED_OFF};
 state_t state();
 
 // pointer to qubie's log, a list of log entries with some added functionality
-log_entry_t* log();
+log_entry_t* get_log();
 // pointer to qubie's observations, a list of contact records
 contact_record_t observations();
 // pointer to wifi monitor
 wifi_monitor_t wifi_monitor();
 // pointer to bluetooth communicator
-bt_communicator_t bl_communicator();
+bt_communicator_t bt_communicator();
 // "qubie" querie just points to "this" so it is not needed here
 
-//@ ensure Result == {running, stopped}
+//@ ensures {stopped, powered_off} == Result
 const state_t* qubie_legal_update_states();
 
-
-//@ ensures Result == (state == POWERED_ON)
-//@ ensures log.empty -- initialized //@TODO
-//@ ensures observations.empty -- initialized //@TODO
+//@ TODO add relevant predicates to avoid error prone syntax
+/*@ ensures Result == (state == POWERED_ON)
+ * ensures log.empty
+ * ensures observations.empty
+ */
 bool powered_on();
 //@ ensures Result == (state == BOOTING)
 bool booting();
@@ -43,6 +45,10 @@ bool running();
 bool stopped();
 //@ ensures Result == (state == POWERED_OFF)
 bool powered_off();
+/*@ ensures log.logged(QUBIE_STATE , state_strings[state]) &&
+ *  (!bt_communicator.subscribed || bt_communicator.action_published(state))
+ */
+bool action_published(state_t state);
 
 // ====================================================================
 // @bon COMMANDS
@@ -50,52 +56,42 @@ bool powered_off();
 
 /*@ requires (state == POWERED_ON);
  *  ensures (state == BOOTING);
- *  ensures publish_action();
+ *  ensures action_published(state);
  */
 void start_booting();
 
 /*@ requires (state == BOOTING);
  *  ensures (state == RUNNING);
- *  ensures publish_action();
+ *  ensures action_published(state);
  */
 void start_running();
 
 /*@ requires (state == RUNNING);
  *  ensures (state == STOPPED);
- *  ensures publish_action();
+ *  ensures action_published(state);
  */
 void stop_running();
 
 /*@ ensures (state == POWERED_OFF);
- *  ensures publish_action();
- *  ensures log.flushed
+ *  ensures action_published(state);
  */
 void power_off();
 
-/*@ ensures delta log;
- *  ensures log.publish()
- */
-void publish_log();
-
-/*@ requires the_state in legal_update_state;
- * 	ensures (the_state == booting) -> start_booting;
- *	ensures (the_state == running) -> start_running;
- *	ensures (the_state == stopped) -> stop_running;
- *	ensures	(the_state == powered_off) -> power_off;
- *
+//@TODO define qubie_legal_update_state(the_state)
+/*@ requires qubie_legal_update_state(the_state);
+ * 	ensures the_state == state;
  */
 void update_state(state_t the_state);
 
-/*@ ensures log.logged()
- *  ensures bt_communicator.publish_action()
+/*@ ensures action_published(the_state)
  */
-void qubie_publish_action(TBD); //TODO
+void qubie_publish_action(state_t the_state);
 
-/*@ ensures delta {observations, log}
- * 	ensures observations.contains(contact_record)
- * 	ensures publish_action()
+/*@ ensures observations.contains(the_contact_record)
+ * 	ensures log.logged()
  */
-void record_observation(contact_record_t contact_record);
+//delta {observations, log}
+void record_observation(contact_record_t the_contact_record);
 
 
 
