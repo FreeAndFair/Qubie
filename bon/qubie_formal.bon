@@ -2,13 +2,81 @@ static_diagram QUBIE_TOPLEVEL
 component 
 	cluster MAIN
 	component 
-		class QUBIE
-		feature
+	    class QUBIE_STATE
+	    inherit VALUE
+	    invariant
+	      Current member_of {powered_on, booting, running, stopped, powered_off}
+	    end
+	    deferred class QUBIE_INTERFACE
+	    feature
 			--the following booleans represent possible qubie states
+			powered_on : BOOLEAN
+				ensure Result = (state = powered_on) end
 			booting : BOOLEAN 
+				ensure Result = (state = booting) end
 			running : BOOLEAN 
+				ensure Result = (state = running) end
 			stopped : BOOLEAN --qubie has run and stopped
-			status : QUBIE_STATUS
+				ensure Result = (state = stopped) end
+			powered_off : BOOLEAN
+				ensure Result = (state = powered_off) end
+			state : QUBIE_STATE
+			deferred log : LOG
+			deferred qubie : QUBIE_INTERFACE 
+			deferred action_published : BOOLEAN
+				-> entry : OBJECT
+
+			start_booting 
+				require
+					powered_on; 
+					--power_on or stopped; //currently soft reset is not allowed
+				ensure
+					state = booting;
+					action_published(state);
+				end
+			start_running -- : Void 
+				require
+					booting
+				ensure
+					state = running;
+					action_published(state);
+				end
+			stop_running 
+				require running
+				ensure
+					state = stopped;
+					action_published(state);
+				end
+			power_off
+				ensure
+					state = powered_off;
+					action_published(state);
+				end
+			deferred publish_action	
+				-> the_state : QUBIE_STATE
+				ensure action_published(the_state); end
+				
+			update_state	--mapping to allow external acces to change states
+				-> the_state : QUBIE_STATE
+				require
+					the_state member_of legal_update_state;
+				ensure
+					the_state = qubie.state;
+--					(the_state = booting) -> qubie.start_booting;
+--					(the_state = running) -> qubie.start_running;
+--					(the_state = stopped) -> qubie.stop_running;
+--					(the_state = powered_off) -> qubie.power_off;
+				end
+				
+	    	legal_update_states : SET[QUBIE_STATE]
+	    		ensure
+	    			Result = {booting, running, stopped, powered_off};
+	    		end
+	    end
+
+		effective class QUBIE
+		inherit QUBIE_INTERFACE
+		feature
 			
 			observations : OBSERVATIONS
 				require not booting end	
@@ -16,153 +84,184 @@ component
 				require not booting end
 			bt_communicator : BLUETOOTH_COMMUNICATOR
 				require not booting end
-			log : LOG
-				require not booting end
-			start_running 
-				require
-					booting
-				end 
+			effective log : LOG
+			effective qubie : QUBIE 
+				ensure Result = Current; end
+			effective action_published : BOOLEAN
+				-> the_state : QUBIE_STATE
 				ensure
-					running
-					log.logged(Current)
+					Result = log.logged(Current) and 
+						(bt_communicator.subscribed -> bt_communicator.action_published(the_state));		
 				end
-			stop_running 
-				require running end
+			effective publish_action
+				-> the_state : QUBIE_STATE
 				ensure
-					stopped
-					log.logged(Current)
+					action_published(the_state);
 				end
+				
+
+			redefined legal_update_states : SET[QUBIE_STATE]
+				ensure Result = {stopped, powered_off}; end
+
 			record_observation 
 				-> contact_record : CONTACT_RECORD
 				ensure 
-					--TBD delta observations and log 
-					observations.contains(contact_record)
+					delta {observations, log}; --if observations is a sequence/list we could limit to observations(size)
+					observations.contains(contact_record);
 					log.logged(Current)
 				end
-		initialized
-			log.empty
-			observations.empty
-		constraint
-			old.stopped implies stopped	
-		invariant
-			status.booting <-> booting
-			status.running <-> running
-			status.stopped <-> stopped
-			xor(booting, running, stopped) --TODO verify this is not true for three simultanious states
-			--status_mux: booting xor running xor stopped
+			initialized --TODO get consensus on syntax
+				ensure 
+					log.empty;
+					observations.empty;
+				end
+
+--		constraint
+--			old(stopped) implies stopped	
 		end	
-		class QUBIE_STATUS
-		feature
-			status : {"booting", "running", "stopped"}
-		end
 	end
 end
 
 
-static_diagram QUBIE_WIFI_MONITOR
+static_diagram QUBIE_MONITOR
 component
-	class WIFI_MONITOR
+	class MONITOR
 	feature 
-		booting : BOOLEAN
-		running : BOOLEAN
+		wifi_booted : BOOLEAN
+			require keyed_hash.set; end
+		wifi_running : BOOLEAN
 		auto_hopping : BOOLEAN
 		keyed_hash : KEYED_HASH
 		frequency_range : SET[FREQUENCY]
 		frequency : FREQUENCY
 		qubie : QUBIE
 		
-		start
+		start_wifi
 			require
-				keyed_hash.set
-				not booting
-				not running
+				booted;
+				not running;
 			ensure
-				running
-				qubie.log.logged(Current)
+				--delta {Current, qubie.observations, qubie.log};
+				running;
+				qubie.log.logged(Current);
 			end
-		stop 
+		stop_wifi
 			require
-				running
+				running;
 			ensure
-				not running 
-				qubie.log.logged(Current)
+				not running; 
+				qubie.log.logged(Current);
 			end
 		set_frequency 
 			-> the_frequency : FREQUENCY
 			ensure 
-				frequency=the_frequency 
-				qubie.log.logged(Current)	
+				delta {frequency, qubie.log};
+				frequency=the_frequency; 
+				qubie.log.logged(Current);	
 			end
 		set_auto_hopping 
 			-> the_truth_value : BOOLEAN
 			ensure 
-				auto_hopping=the_truth_value 
-				qubie.log.logged(Current)	
+				delta {auto_hopping, qubie.log};
+				auto_hopping=the_truth_value; 
+				qubie.log.logged(Current);	
 			end
 		report_detected_device
 			-> the_mac_address : VALUE
 			-> the_signal_strength : VALUE
 			ensure
-				qubie.observations.contains(CONTACT_RECORD.make(keyed_hash, the_mac_address, the_signal_strength))
-				qubie.log.logged(Current)	
+				delta {qubie.observations, qubie.log};
+				qubie.observations.contains(CONTACT_RECORD.make(keyed_hash, the_mac_address, the_signal_strength));
+				qubie.log.logged(Current);	
 			end
 		--TODO the keyed hash is never changed after running
 	end
-
+	
 	class FREQUENCY
 	inherit VALUE
+	end
+	class WIFI_MONITOR
+	inherit MONITOR
+	end
 end
 	
 
 
-static_diagram QUBIE_BLUETOOTH_COMMUNICATOR
+static_diagram QUBIE_COMMUNICATOR
 component
-	class BLUETOOTH_COMMUNICATOR
+	deferred class COMMUNICATOR
+	inherit QUBIE_INTERFACE
 	feature
-		qubie : QUBIE
-		--qubie_status is taken from qubie internal fields
+		effective qubie : QUBIE
+		effective log : LOG
+			ensure Result = qubie.log; end
+		qubie_state : QUBIE_STATE
+			ensure
+				Result=qubie.state;
+			end
+		redefined update_qubie_state {^QUBIE_INTERFACE.update_state}
+			-> the_state : QUBIE_STATE
+	
+		redefined legal_update_states : SET[QUBIE_STATE]
+			ensure Result = {stopped, powered_off}; end
+
+	end
+	effective class BLUETOOTH_COMMUNICATOR
+	inherit COMMUNICATOR
+	feature
 		subscribed : BOOLEAN
-		client : BLUETOOTH_CLIENT
-		
+		bt_client : BLUETOOTH_CLIENT
+			require subscribed; end
+		action_published : BOOLEAN
+			-> the_state : QUBIE_STATE
+			require
+				subscribed;
+			ensure
+				bt_client.received(the_state);
+			end
 		subscribe
 			-> the_bluetooth_client : BLUETOOTH_CLIENT
 			require
-				not old.subscribed
+				not subscribed;
 			ensure
-			delta 
-				client=the_bluetoth_client
-				subscribed
+				delta {bt_client, subscribed}; --TODO? is this accurate taking into account that the bt_client, once subscribed, can modify qubie states etc.?
+				bt_client=the_bluetooth_client;
+				subscribed;
 			end
 		unsubscribe
 			require
-				old.subscribed
+				subscribed;
 			ensure
-				not subscribed
+				delta {bt_client, subscribed};
+				not subscribed;
 			end
-		update_status
-			-> the_status : QUBIE_STATUS
-			ensure qubie.status=the_status end
+		effective publish_action
+			-> the_state : QUBIE_STATE
+			ensure 
+				action_published(the_state);
+			end
+			--TODO ensure if subscribed -> *notify client* end
 	end
-	class BLUETOOTH_CLIENT
+	--TODO class PHYSICAL_COMMUNICATOR inherit COMMUNICATOR for buttons+leds
+	--TODO TOUCH_SCREEN inherit COMMUNICATOR
+	class BLUETOOTH_CLIENT 
 	feature
-		communicator : BLUETOOTH_COMMUNICATOR
-		status : QUBIE_STATUS
-		--TODO command to update qubie status
-	invariant
-		status=communicator.qubie.status
+		bt_communicator : BLUETOOTH_COMMUNICATOR
+		received : BOOLEAN
+			-> the_state : QUBIE_STATE
+		receive
+			-> the_state : QUBIE_STATE
+			ensure received(the_state); end
+		update_qubie_state
+			the_state : QUBIE_STATE
+			require
+				bt_communicator.bt_client = Current; --TODO? is this obvious?
+			ensure 
+				received(the_state); 
+			end
 	end
 end	
 
-
-static_diagram WIFI_DEVICE_IDENTIFIER
-component
-	class DEVICE_IDENTIFIER --immutable
-	feature
-		encrypted : BOOLEAN
-		identifier_string : STRING
-	end
-end
-	
 	
 static_diagram QUBIE_KEYED_HASH
 component
@@ -170,36 +269,42 @@ component
 	class KEYED_HASH
 	feature
 		set : BOOLEAN --write-once
+		create_random_key : VALUE
+		set_key
 			-> the_key : VALUE
 			require
-				not set
+				not set;
 			ensure
-				key=the_key
-				set
-				Result=True --TODO add results elsewhere
+				delta {set, hash, key};
+				key = the_key;
+				set;
 			end
 		hashed_string : VALUE
-			->the_string : STRING
-			require set end
+			->the_string : VALUE
+			require set;
 			ensure
-				Result=hash.hash(the_string)
+				Result = hash.hash(the_string);
 				--Return the keyed hash of the string
 			end
-	constraint
-		old.set implies set
+--	constraint
+--		old.set implies set
 	--invariant
 		--for_all a,b:STRING it_holds ((hashed_string(a)=hashed_string(b))=(a=b) )
 		--exists a:STRING such_that (a /= hashed_string(a))
-	end
-	feature NONE
+--	end
+--	feature NONE
 		key : VALUE --write-once
 		hash : HASH --we know that hash is functional
 	end
 end
 	
-	
-static_diagram QUBIE_CONTACT_RECORDINGS
+static_diagram QUBIE_OBSERVATIONS
 component
+	class DEVICE_IDENTIFIER --immutable
+	feature
+		encrypted : BOOLEAN
+		identifier_string : VALUE
+	end
 	class TIME reused
 	class CONTACT_RECORD --immutable
 	feature
@@ -208,8 +313,21 @@ component
 		rssi : VALUE
 		frequency : FREQUNCY
 	end
-	class OBSERVATIONS
-	inherit SET[CONTACT_RECORD]
+	class OBSERVATIONS inherit SET[CONTACT_RECORD]  --TODO make this a sequence, or perhaps list
+	feature
+		size : NATURAL
+		empty : BOOLEAN
+			ensure Result = (size = 0); end
+		contains : BOOLEAN
+			-> the_contact_record : CONTACT_RECORD
+			ensure the_contact_record member_of Current; end
+		add_contact_record
+			-> the_contact_record : CONTACT_RECORD
+			ensure
+				size = old size + 1;
+				contains(the_contact_record);
+			end
+	end
 end
 
 
@@ -217,22 +335,25 @@ static_diagram QUBIE_LOGGER
 component 
 	class LOG_ENTRY --immutable
 	feature
-		description : STRING
+		message : STRING
 		time : STRING
 	end
 	class LOG persistent
 	inherit LIST[LOG_ENTRY] 
 	feature
-		entry++ : LOG_ENTRY {^LIST.element} --rename element as entry
-		logged
-			-> object : OBJECT
+--		entry++ : LOG_ENTRY {^LIST.element} --rename element as entry
+		empty : BOOLEAN
+			ensure Result = (size = 0); end
+		logged : BOOLEAN
+			-> entry : OBJECT
 			ensure
-				delta element(size)
-				contains(LOG_ENTRY.make(object))
-				Result=True
+				delta element(size);
+			end			
+		log
+			-> entry : OBJECT
+			ensure
+				logged(entry);
 			end
-	--constraint
-	--	for_all i:[1..old.size] it_holds old element(i)=element(i)
 	end
 end
 	
