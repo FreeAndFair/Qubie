@@ -269,6 +269,7 @@ component
 	class KEYED_HASH
 	feature
 		set : BOOLEAN --write-once
+		create_random_key : VALUE
 		set_key
 			-> the_key : VALUE
 			require
@@ -314,11 +315,18 @@ component
 	end
 	class OBSERVATIONS inherit SET[CONTACT_RECORD]  --TODO make this a sequence, or perhaps list
 	feature
+		size : NATURAL
 		empty : BOOLEAN
 			ensure Result = (size = 0); end
 		contains : BOOLEAN
 			-> the_contact_record : CONTACT_RECORD
 			ensure the_contact_record member_of Current; end
+		add_contact_record
+			-> the_contact_record : CONTACT_RECORD
+			ensure
+				size = old size + 1;
+				contains(the_contact_record);
+			end
 	end
 end
 

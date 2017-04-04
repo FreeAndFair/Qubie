@@ -2,6 +2,7 @@
 
 #include <stddef.h>
 #include <stdbool.h>
+#include <assert.h>
 #ifndef QUBIE_TYPES
 #define QUBIE_TYPES
 typedef enum {
@@ -25,12 +26,12 @@ typedef unsigned char mac_t[MAC_SIZE];
 
 //hash key is 256 bits (or 64 bytes) in python hashlib.md5
 #define KEY_SIZE 64 //TODO should it be 128? check options in C
-typedef unsigned char key_t[KEY_SIZE];
+typedef unsigned char qubie_key_t[KEY_SIZE];
 /* doesn't work in C
  * typedef struct key {
  * 	char& operator[](int i) { return byte[i]; }
  * 	unsigned char bytes[KEY_SIZE];
- * } key_t;
+ * } qubie_key_t;
  */
 
 //frequencies are in increments of 1MHz at least up to 5875MHz (less than 2^16 MHz)
@@ -41,7 +42,7 @@ typedef unsigned int frequency_t;
 typedef char rssi_t;
 
 //only minimal usage of time is needed. it's enough to count seconds since the epoch
-typedef unsigned long time_t;
+typedef unsigned long qubie_time_t;
 
 // a list of possible qubie states
 typedef enum {POWERED_ON, BOOTING, RUNNING, STOPPED, POWERED_OFF} state_t;
@@ -49,25 +50,32 @@ static const char *state_strings[] = {"powered on", "booting", "running", "stopp
 
 typedef struct device_id {
 	const bool encrypted;
-	const mac_t identifier_string;
+	const mac_t *identifier_string;
 } device_id_t;
 
 typedef struct contact_record {
 	const device_id_t device_id;
-	const time_t contact_time;
+	const qubie_time_t contact_time;
 	const rssi_t rssi;
 	const frequency_t frequency;
+	contact_record_t *prev;
 } contact_record_t;
+
+typedef struct observations {
+	int size;
+	contact_record_t *first;
+	contact_record_t *last;
+} observations_t;
 
 typedef struct log_entry {
 	const char* message;
-	const time_t time;
+	const qubie_time_t time;
 } log_entry_t;
 
 typedef void* hash_t; //@TODO
 typedef struct keyed_hash {
 	bool set;
-	key_t key;
+	qubie_key_t *key;
 	hash_t hash;
 }keyed_hash_t;
 
@@ -110,7 +118,7 @@ typedef struct qubie {
 	// pointer to qubie's log, a list of log entries with somee added functionality
 	log_entry_t *log;
 	// pointer to qubie's observations, a set of contact records
-	contact_record_t *observations;
+	observations_t *observations;
 	// pointer to wifi monitor
 	wifi_monitor_t *wifi_monitor;
 	// pointer to bluetooth communicator
