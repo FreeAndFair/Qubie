@@ -128,7 +128,6 @@ component
 	class MONITOR
 	feature 
 		wifi_booted : BOOLEAN
-			require keyed_hash.set; end
 		wifi_running : BOOLEAN
 		auto_hopping : BOOLEAN
 		keyed_hash : KEYED_HASH
@@ -136,6 +135,14 @@ component
 		frequency : FREQUENCY
 		qubie : QUBIE
 		
+		boot_wifi
+			require 
+				not booted;
+			ensure
+				booted;
+				keyed_hash.set;
+				qubie.log.logged(Current);
+			end
 		start_wifi
 			require
 				booted;
@@ -212,12 +219,11 @@ component
 		subscribed : BOOLEAN
 		bt_client : BLUETOOTH_CLIENT
 			require subscribed; end
-		action_published : BOOLEAN
+		effective action_published : BOOLEAN
 			-> the_state : QUBIE_STATE
-			require
-				subscribed;
 			ensure
-				bt_client.received(the_state);
+				--publish to all existing clients;
+				subscribed -> bt_client.received(the_state);
 			end
 		subscribe
 			-> the_bluetooth_client : BLUETOOTH_CLIENT
@@ -251,12 +257,16 @@ component
 			-> the_state : QUBIE_STATE
 		receive
 			-> the_state : QUBIE_STATE
-			ensure received(the_state); end
+			ensure 
+				delta Current;
+				received(the_state); 
+			end
 		update_qubie_state
 			the_state : QUBIE_STATE
-			require
-				bt_communicator.bt_client = Current; --TODO? is this obvious?
+			--require
+				--bt_communicator.bt_client = Current; --TODO? is this obvious?
 			ensure 
+				bt_communicator.qubie_state = the_state;
 				received(the_state); 
 			end
 	end
@@ -320,7 +330,9 @@ component
 			ensure Result = (size = 0); end
 		contains : BOOLEAN
 			-> the_contact_record : CONTACT_RECORD
-			ensure the_contact_record member_of Current; end
+			ensure 
+				the_contact_record member_of Current; 
+			end
 		add_contact_record
 			-> the_contact_record : CONTACT_RECORD
 			ensure
@@ -342,6 +354,7 @@ component
 	inherit LIST[LOG_ENTRY] 
 	feature
 --		entry++ : LOG_ENTRY {^LIST.element} --rename element as entry
+		current_time : VALUE
 		empty : BOOLEAN
 			ensure Result = (size = 0); end
 		logged : BOOLEAN
