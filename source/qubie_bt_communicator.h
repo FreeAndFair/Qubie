@@ -3,7 +3,7 @@
 #include "qubie_t.h"
 
 //constructor
-bt_communicator_t make_bt_communicator(qubie_t *qubie);
+bt_communicator_t *make_bt_communicator(qubie_t *qubie);
 
 // ====================================================================
 // @bon QUERIES
@@ -16,22 +16,28 @@ bt_communicator_t make_bt_communicator(qubie_t *qubie);
 
 // qubie status
 //@ ensures Result == qubie.state
-state_t bt_communicator_qubie_state();
+state_t bt_communicator_qubie_state(bt_communicator_t *self);
 
 //pointer to the qubie module that is connected to this communicator
 // moved to central location: qubie_t qubie();
 
 // pointer to qubie's log, a list of log entries with some added functionality
-log_entry_t* get_qubie_log();
+qubie_logger_t *get_qubie_log(bt_communicator_t *self);
 
-bool subscribed();
+bool subscribed(bt_communicator_t *self);
 //@ requires subscribed
-bt_client_t bt_client();
+bt_client_t *bt_client(bt_communicator_t *self);
+
+/*@ ensure !subscribed or bt_client.received(the_state);
+ *
+ */
+bool bt_communicator_action_published(bt_communicator_t *self, state_t the_state);
 
 static const state_t bt_communicator_legal_update_states[2] = {STOPPED, POWERED_OFF};
+static const state_t *bt_communicator_legal_update_states_pointer = bt_communicator_legal_update_states;
 /*@ ensures {stopped, powered_off} == Result;
  */
-state_t *get_bt_communicator_legal_update_states();
+const state_t *get_bt_communicator_legal_update_states();
 
 // ====================================================================
 // @bon COMMANDS
@@ -47,22 +53,22 @@ state_t *get_bt_communicator_legal_update_states();
  * 	ensures subscribed;
  */
 //@ delta {bt_client, subscribed};
-void subscribe(bt_client_t the_bluetooth_client);
+void subscribe(bt_communicator_t *self, bt_client_t *the_bluetooth_client);
 
 /*@ requires subscribed
  * 	ensures !subscribed;
  */
 //@ delta {bt_client, subscribed};
-void unsubscribe();
+void unsubscribe(bt_communicator_t *self);
 
 /*@ ensures bt_client.received(the_state)
  */
-void bt_communicator_publish_action(state_t the_state);
+void bt_communicator_publish_action(bt_communicator_t *self, state_t the_state);
 
 /*@ requires the_state in bt_communicator_legal_update_states;
  * 	ensures the_state == qubie.state;
  */
-void update_qubie_state(state_t the_state);
+void bt_communicator_update_qubie_state(bt_communicator_t *self, state_t the_state);
 
 
 

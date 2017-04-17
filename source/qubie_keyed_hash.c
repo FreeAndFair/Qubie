@@ -8,12 +8,12 @@
 #include "qubie_keyed_hash.h"
 
 //constructor
-keyed_hash_t make_keyed_hash(){
+keyed_hash_t *make_keyed_hash(){
 	struct keyed_hash *keyed_hash_struct = malloc(sizeof(struct keyed_hash));
 	keyed_hash_struct->set=false;
 	qubie_key_t *the_key = create_random_key();
 	set_key(keyed_hash_struct, the_key);
-	return *keyed_hash_struct;
+	return keyed_hash_struct;
 };
 
 // ====================================================================

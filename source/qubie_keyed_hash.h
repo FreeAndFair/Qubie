@@ -3,7 +3,7 @@
 #include "qubie_t.h"
 
 //constructor
-keyed_hash_t make_keyed_hash();
+keyed_hash_t *make_keyed_hash();
 
 // ====================================================================
 // @bon QUERIES
