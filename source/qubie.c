@@ -1,6 +1,7 @@
 //qubie module implementation summary
 
 #include "qubie_t.h"
+#include "qubie.h"
 #include "qubie_bt_communicator.h"
 #include "qubie_log.h"
 #include "qubie_observations.h"
@@ -9,14 +10,21 @@
 #include <stdbool.h>
 #include <stddef.h>
 
+static const state_t legal_update_states[] = {RUNNING, STOPPED, POWERED_OFF};
+//@design must be synced to typedef enum {POWERED_ON, BOOTING, RUNNING, STOPPED, POWERED_OFF} state_t;
+const char *state_strings[] = {"powered on", "booting", "running", "stopped", "powered off"};
+
 //constructor
 qubie_t *make_qubie(){
 	qubie_t *qubie_struct = malloc(sizeof(struct qubie));
+
 	qubie_struct->state = POWERED_ON;
-	qubie_struct->log = make_qubie_logger();
-	qubie_struct->observations = make_qubie_observations();
+	qubie_struct->log = make_qubie_logger("qubie_log.txt");
+	qubie_struct->observations = make_qubie_observations("qubie_observations.csv");
 	qubie_struct->wifi_monitor = make_wifi_monitor(qubie_struct);
 	qubie_struct->bt_communicator = make_bt_communicator(qubie_struct);
+	qubie_struct->legal_update_states = legal_update_states;
+	return qubie_struct;
 };
 
 //@ TODO define predicates in acsl file
@@ -49,7 +57,7 @@ bt_communicator_t *bt_communicator(qubie_t *self){
 
 //@ ensures {stopped, powered_off} == Result
 const state_t *qubie_legal_update_states(qubie_t *self){
-	return legal_update_states_pointer;
+	return self->legal_update_states;
 };
 
 //@ TODO add relevant predicates to avoid error prone syntax
@@ -81,14 +89,14 @@ bool powered_off(qubie_t *self){
  */
 bool action_published(qubie_t *self, state_t the_state){
 	//@TODO if !logged no need to check published_to_bt
-	bool logged = logged(self->log, QUBIE_STATE , state_strings[the_state]);
+	bool action_logged = logged(self->log, QUBIE_STATE , (void *)state_strings[the_state]);
 	bool published_to_bt;
-	if subscribed(self->bt_communicator) {
+	if (subscribed(self->bt_communicator)) {
 		published_to_bt = true;
 	} else {
-		published_to_bt = received(self->bt_communicator, the_state);
+		published_to_bt = bt_communicator_action_published(self->bt_communicator, the_state);
 	}
-	return logged && published_to_bt;
+	return action_logged && published_to_bt;
 };
 
 // ====================================================================
@@ -110,7 +118,7 @@ void set_and_publish(qubie_t *self, state_t new_state){
 void start_booting(qubie_t *self){
 	boot_wifi(self->wifi_monitor);
 	//@TBD is action needed for bt_communicator?
-	set_and_publish(BOOTING);
+	set_and_publish(self, BOOTING);
 };
 
 /*@ requires (state == BOOTING);
@@ -119,7 +127,7 @@ void start_booting(qubie_t *self){
  */
 void start_running(qubie_t *self){
 	start_wifi(self->wifi_monitor);
-	set_and_publish(RUNNING);
+	set_and_publish(self, RUNNING);
 };
 
 /*@ requires (state == RUNNING);
@@ -128,15 +136,17 @@ void start_running(qubie_t *self){
  */
 void stop_running(qubie_t *self){
 	stop_wifi(self->wifi_monitor);
-	set_and_publish(STOPPED);
+	set_and_publish(self, STOPPED);
 };
 
 /*@ ensures (state == POWERED_OFF);
  *  ensures action_published(state);
  */
 void power_off(qubie_t *self){
-	//@TBD tidy up logs and observations?
-	set_and_publish(POWERED_OFF);
+	//@TBD move cleanup code to the relevant modules.
+	fclose(self->log->log_fp);
+	fclose(self->observations->observations_fp);
+	set_and_publish(self, POWERED_OFF);
 };
 
 //@TODO define qubie_legal_update_state(the_state)
@@ -159,7 +169,7 @@ void update_state(qubie_t *self, state_t the_state){
 /*@ ensures action_published(the_state)
  */
 void qubie_publish_action(qubie_t *self, state_t the_state){
-	add_log_entry(self->log, QUBIE_STATE , state_strings[the_state]);
+	add_log_entry(self->log, QUBIE_STATE , (void *)state_strings[the_state]);
 	if (subscribed(self->bt_communicator)){
 		bt_communicator_publish_action(self->bt_communicator, the_state);
 	}
@@ -171,7 +181,7 @@ void qubie_publish_action(qubie_t *self, state_t the_state){
 //delta {observations, log}
 void record_observation(qubie_t *self, contact_record_t *the_contact_record){
 	add_contact_record(self->observations, the_contact_record);
-	add_log_entry(self->log, QUBIE_CONTACT_RECORD, the_contact_record);
+	add_log_entry(self->log, QUBIE_DETECTED_DEVICE, the_contact_record);
 };
 
 

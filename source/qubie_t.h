@@ -1,21 +1,22 @@
 // qubie type and constant definitions
 
+#ifndef QUBIE_TYPES
+#define QUBIE_TYPES
+#include "qubie_defaults.h"
 #include <stddef.h>
 #include <stdbool.h>
 #include <assert.h>
-#include <stdio.h> //@TODO remove this, and replace with minimal requirements
+#include <stdio.h>
 #include <stdlib.h>
-#ifndef QUBIE_TYPES
-#define QUBIE_TYPES
 
 
 typedef enum {
-	QUBIE_STATE,
-	QUBIE_CONTACT_RECORD,
+	QUBIE_STATE = 0,
+	QUBIE_DETECTED_DEVICE,
 	WIFI_MONITOR_STATE,
 	WIFI_MONITOR_FREQUENCY,
-	WIFI_MONITOR_AUTO_HOPPING//,
-	//WIFI_MONITOR_DETECTED_DEVICE
+	WIFI_MONITOR_AUTO_HOPPING,
+	MAX_MESSAGE_TYPES //@design this enum is the length of the array of all message types
 } message_t;
 
 //mac address is 48 bits (or 6 bytes) until we decide to support EUI-64
@@ -40,45 +41,28 @@ typedef unsigned char qubie_key_t[KEY_SIZE];
 
 //frequencies are in increments of 1MHz at least up to 5875MHz (less than 2^16 MHz)
 typedef unsigned int frequency_t;
-/* channels 12 and 13 are not really in use in the us but they are added because they are used in other countries
- * and also in specific cases inside the usa. channel 14 (2484MHz) is omitted because it is not in use by cell phones
- * @TODO verify the channels are correct (current source is wikipedia)
- */
-static const frequency_t wifi_channels[68] = {	\
-		2412, 2417, 2422, 2427, 2432, 2437, 2442, 2447, 2452, 2457,	\
-		2462, 2467, 2472,	\
-		5170, 5180, 5190, 5200, 5210, 5220, 5230, 5240, 5250, 5260,	\
-		5270, 5280, 5290, 5300, 5310, 5320,	\
-		5500, 5510, 5520, 5530, 5540, 5550, 5560, 5570, 5580, 5590,	\
-		5600, 5610, 5620, 5630, 5640,	\
-		5660, 5670, 5680, 5690, 5700,	\
-		5710, 5720,	\
-		5745, 5750, 5755, 5760, 5765, 5770, 5775, 5780, 5785, 5790,	\
-		5795, 5800, 5805, 5810, 5815, 5820, 5825	\
-};
+
 //RSSI is defined between 0-255 though some devices measure on scale of 0-60 or 0-100
 //TODO perhaps we need to switch to dBm
-typedef char rssi_t;
+typedef unsigned char rssi_t;
 
 //only minimal usage of time is needed. it's enough to count seconds since the epoch
 typedef unsigned long qubie_time_t;
 
 // a list of possible qubie states
 typedef enum {POWERED_ON, BOOTING, RUNNING, STOPPED, POWERED_OFF} state_t;
-static const char *state_strings[] = {"powered on", "booting", "running", "stopped", "powered off"};
 
 typedef struct device_id {
 	bool encrypted;
-	mac_t *identifier_string;
+	char const *identifier_string;
 } device_id_t;
 
 typedef struct contact_record contact_record_t;
 typedef struct contact_record {
 	device_id_t *device_id;
 	qubie_time_t contact_time;
-	rssi_t rssi;
-	const frequency_t *frequency;
-	contact_record_t *prev;
+	const rssi_t rssi;
+	const frequency_t frequency;
 } contact_record_t;
 
 typedef struct observations {
@@ -90,8 +74,10 @@ typedef struct observations {
 } qubie_observations_t;
 
 typedef struct log_entry {
-	char* message;
+	 char* message;
 	qubie_time_t time;
+	message_t message_type;
+	void *message_val;
 } log_entry_t;
 
 typedef struct qubie_logger {
@@ -111,8 +97,6 @@ typedef struct bt_client bt_client_t;
 
 typedef struct qubie qubie_t;
 
-//there is only one qubie which is accessed by multiple modules
-static qubie_t *qubie;
 //@ ensures qubie == Result
 qubie_t *get_qubie();
 
@@ -125,12 +109,13 @@ typedef struct wifi_monitor {
 	frequency_t frequency;
 	qubie_t *qubie; //pointer to qubie
 } wifi_monitor_t;
-static const char *wifi_state_strings[] = {"booted", "running"};
+//static const char *wifi_state_strings[] = {"booted", "running"};
 
 typedef struct bt_communicator {
 	bool subscribed;
 	bt_client_t *bt_client;
 	qubie_t *qubie;
+	state_t const *legal_update_states;
 } bt_communicator_t;
 
 typedef struct bt_client {
@@ -151,6 +136,7 @@ typedef struct qubie {
 	// pointer to bluetooth communicator
 	bt_communicator_t *bt_communicator;
 	// "qubie" querie just points to "this" so it is not needed here
+	state_t const *legal_update_states;
 } qubie_t;
 #endif
 

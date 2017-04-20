@@ -4,7 +4,7 @@
 
 //constructors
 log_entry_t *make_log_entry(message_t message_type, void* message_val);
-qubie_logger_t *make_qubie_logger();
+qubie_logger_t *make_qubie_logger(const char* filename);
 
 // ====================================================================
 // @bon QUERIES
@@ -19,7 +19,7 @@ bool log_empty(qubie_logger_t *self);
 bool logged(qubie_logger_t *self, message_t message_type, void* message_val);
 
 
-qubie_time_t current_time();
+qubie_time_t current_time(qubie_time_t *seconds);
 
 // ====================================================================
 // @bon COMMANDS

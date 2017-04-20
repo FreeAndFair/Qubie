@@ -5,9 +5,6 @@
 //constructor
 qubie_t *make_qubie();
 
-//@ ensure Result == {running, stopped}
-static const state_t legal_update_states[3] = {RUNNING, STOPPED, POWERED_OFF};
-static const state_t *legal_update_states_pointer = legal_update_states;
 
 //@ TODO define predicates in acsl file
 
@@ -23,9 +20,9 @@ qubie_logger_t *get_log(qubie_t *self);
 // pointer to qubie's observations, a list of contact records
 qubie_observations_t *observations(qubie_t *self);
 // pointer to wifi monitor
-wifi_monitor_t wifi_monitor(qubie_t *self);
+wifi_monitor_t *wifi_monitor(qubie_t *self);
 // pointer to bluetooth communicator
-bt_communicator_t bt_communicator(qubie_t *self);
+bt_communicator_t *bt_communicator(qubie_t *self);
 // "qubie" querie just points to "this" so it is not needed here
 
 //@ ensures {stopped, powered_off} == Result

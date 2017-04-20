@@ -8,12 +8,16 @@
 #include <stddef.h>
 #include <stdlib.h>
 
+//@TODO is there a better way to define and store this data?
+static const state_t bt_communicator_legal_update_states[2] = {STOPPED, POWERED_OFF};
+
 //constructor
 bt_communicator_t *make_bt_communicator(qubie_t *qubie){
 	bt_communicator_t *bt_communicator_struct = malloc(sizeof(struct bt_communicator));
 	bt_communicator_struct->subscribed = false;
 	bt_communicator_struct->bt_client = NULL;
 	bt_communicator_struct->qubie = qubie;
+	bt_communicator_struct->legal_update_states=bt_communicator_legal_update_states;
 	return bt_communicator_struct;
 };
 
@@ -63,8 +67,8 @@ bool bt_communicator_action_published(bt_communicator_t *self, state_t the_state
 
 /*@ ensures {stopped, powered_off} == Result;
  */
-const state_t *get_bt_communicator_legal_update_states(){
-	return bt_communicator_legal_update_states_pointer;
+const state_t *get_bt_communicator_legal_update_states(bt_communicator_t *self){
+	return self->legal_update_states;
 };
 
 // ====================================================================

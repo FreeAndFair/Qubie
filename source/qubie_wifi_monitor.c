@@ -8,6 +8,8 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
+static const frequency_t wifi_channels[NUM_WIFI_CHANNELS] = FREQUENCY_WIFI_CHANNELS;
+
 //constructor
 wifi_monitor_t *make_wifi_monitor(qubie_t *qubie){
 	wifi_monitor_t *wifi_monitor_struct=malloc(sizeof(struct wifi_monitor));
@@ -60,7 +62,7 @@ void boot_wifi(wifi_monitor_t *self){
 	qubie_key_t *the_key = create_random_key();
 	set_key(self->keyed_hash, the_key);
 	//@TODO boot actual wifi device
-	add_log_entry(WIFI_MONITOR_STATE, (void *)"booted");
+	add_log_entry(self->qubie->log, WIFI_MONITOR_STATE, (void *)"booted");
 	self->wifi_booted = true;
 };
 
@@ -71,7 +73,7 @@ void boot_wifi(wifi_monitor_t *self){
  */
 void start_wifi(wifi_monitor_t *self){
 	//@TODO start actual wifi device
-	add_log_entry(WIFI_MONITOR_STATE, (void *)"running");
+	add_log_entry(self->qubie->log, WIFI_MONITOR_STATE, (void *)"running");
 	self->wifi_running = true;
 };
 
@@ -81,7 +83,7 @@ void start_wifi(wifi_monitor_t *self){
  */
 void stop_wifi(wifi_monitor_t *self){
 	//@TODO stop actual wifi device
-	add_log_entry(WIFI_MONITOR_STATE, (void *)"stopped");
+	add_log_entry(self->qubie->log, WIFI_MONITOR_STATE, (void *)"stopped");
 	self->wifi_running = false;
 };
 
@@ -92,7 +94,7 @@ void stop_wifi(wifi_monitor_t *self){
 void set_frequency(wifi_monitor_t *self, frequency_t the_frequency){
 	self->frequency = the_frequency;
 	//@TODO set frequency of actual wifi device
-	add_log_entry(WIFI_MONITOR_FREQUENCY, (void *)self);
+	add_log_entry(self->qubie->log, WIFI_MONITOR_FREQUENCY, (void *)the_frequency);
 };
 
 /*@ ensures auto_hopping==the_truth_val;
@@ -102,7 +104,7 @@ void set_frequency(wifi_monitor_t *self, frequency_t the_frequency){
 void set_auto_hopping(wifi_monitor_t *self, bool the_truth_val){
 	self->auto_hopping = the_truth_val;
 	//@TODO set auto hopping state of actual wifi device
-	add_log_entry(WIFI_MONITOR_AUTO_HOPPING, (void *)self);
+	add_log_entry(self->qubie->log, WIFI_MONITOR_AUTO_HOPPING, (void *)the_truth_val);
 
 };
 
@@ -116,8 +118,8 @@ void report_detected_device(
 		rssi_t the_signal_strength,
 		frequency_t the_frequency
 		){
-	device_id_t *the_device_id = make_device_id(the_mac_address);
-	contact_record_t *the_contact_record = make_contact_record(the_device_id, current_time(), the_signal_strength, the_frequency);
+	device_id_t *the_device_id = make_device_id(self->keyed_hash, the_mac_address);
+	contact_record_t *the_contact_record = make_contact_record(the_device_id, current_time(NULL), the_signal_strength, the_frequency);
 	record_observation(self->qubie, the_contact_record);
 };
 
