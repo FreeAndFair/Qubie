@@ -18,7 +18,7 @@ qubie_key_t *key(keyed_hash_t *self);
 /*@ requires set
  * 	ensures hash.hash(the_string) == Result;
  */
-const mac_t *hashed_string(keyed_hash_t *self, mac_t the_string);
+char const *hashed_string(keyed_hash_t *self, bool encrypted, mac_t *the_string);
 
 qubie_key_t *create_random_key();
 

@@ -1,5 +1,6 @@
 CC=gcc
-CFLAGS= -Wall 
+CFLAGS=$(pkg-config --cflags libsodium)  -Wall 
+LDFLAGS=$(pkg-config --libs libsodium) -lsodium
 SYSTEM = qubie
 NFORMAL_BON_FILES = $(SYSTEM)-domain-model.bon
 STATIC_MODEL_FILES = $(SYSTEM)_static_model.bon
@@ -21,7 +22,7 @@ BON_FILES =  $(INFORMAL_BON_FILES) $(FORMAL_BON_FILES) $(REQUIREMENTS)
 all: main typecheck $(SYSTEM)-iig.dot index.txt index.html html/index.html
 	
 main: $(SOURCE_FILES) $(STUB_FILES)
-	$(CC) $(CFLAGS) -o $(SYSTEM)_main  $(SOURCE_FILES) $(STUB_FILES)
+	$(CC) $(CFLAGS) -o $(SYSTEM)_main  $(SOURCE_FILES) $(STUB_FILES)  $(LDFLAGS) 
 	 
 
 typecheck: typecheck-informal typecheck-formal \
@@ -43,7 +44,7 @@ typecheck-dynamic:
 	bonc -tc -i -ci  $(INFORMAL_BON_FILES) $(DYNAMIC_MODEL_FILES)
 
 clean:
-	rm -f $(SYSTEM)*.o
+	rm -f *.o
 
 $(SYSTEM)-icg.dot: $(BON_FILES)
 	bonc -g ICG $(BON_FILES) > $(SYSTEM)-icg.dot

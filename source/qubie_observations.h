@@ -4,12 +4,14 @@
 
 //constructors
 qubie_observations_t *make_qubie_observations();
+
 contact_record_t *make_contact_record(device_id_t *device_id,
 								qubie_time_t contact_time,
 								rssi_t rssi,
 								frequency_t frequency
 								);
-device_id_t *make_device_id(mac_t *identifier_string);
+
+device_id_t *make_device_id(keyed_hash_t *hash, mac_t *raw_identifier);
 
 // ====================================================================
 // @bon QUERIES

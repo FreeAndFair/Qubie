@@ -33,11 +33,9 @@ bt_client_t *bt_client(bt_communicator_t *self);
  */
 bool bt_communicator_action_published(bt_communicator_t *self, state_t the_state);
 
-static const state_t bt_communicator_legal_update_states[2] = {STOPPED, POWERED_OFF};
-static const state_t *bt_communicator_legal_update_states_pointer = bt_communicator_legal_update_states;
 /*@ ensures {stopped, powered_off} == Result;
  */
-const state_t *get_bt_communicator_legal_update_states();
+const state_t *get_bt_communicator_legal_update_states(bt_communicator_t *self);
 
 // ====================================================================
 // @bon COMMANDS
