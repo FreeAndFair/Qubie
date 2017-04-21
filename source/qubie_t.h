@@ -22,6 +22,8 @@ typedef enum {
 //mac address is 48 bits (or 6 bytes) until we decide to support EUI-64
 #define MAC_SIZE 6
 typedef unsigned char mac_t[MAC_SIZE];
+//@design string representation of (hashed)mac is 2chars per byte + 1 char for NULL termination
+#define MAC_STRING_LEN (MAC_SIZE * 2 + 1)
 /* doesn't work in C
  * typedef struct mac {
  * 	char& operator[](int i) { return byte[i]; }
@@ -54,21 +56,20 @@ typedef enum {POWERED_ON, BOOTING, RUNNING, STOPPED, POWERED_OFF} state_t;
 
 typedef struct device_id {
 	bool encrypted;
-	char const *identifier_string;
+	char const identifier_string[MAC_STRING_LEN];
 } device_id_t;
 
 typedef struct contact_record contact_record_t;
 typedef struct contact_record {
-	device_id_t *device_id;
-	qubie_time_t contact_time;
+	device_id_t const device_id;
+	const qubie_time_t contact_time;
 	const rssi_t rssi;
 	const frequency_t frequency;
 } contact_record_t;
 
 typedef struct observations {
 	unsigned int size;
-	//contact_record_t *first;
-	contact_record_t *last;
+	//contact_record_t last;
 	FILE *observations_fp;
 
 } qubie_observations_t;
@@ -130,7 +131,7 @@ typedef struct qubie {
 	// pointer to qubie's log, a list of log entries with somee added functionality
 	qubie_logger_t *log;
 	// pointer to qubie's observations, a set of contact records
-	qubie_observations_t *observations;
+	qubie_observations_t const observations;
 	// pointer to wifi monitor
 	wifi_monitor_t *wifi_monitor;
 	// pointer to bluetooth communicator

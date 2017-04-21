@@ -25,7 +25,12 @@ component
 			deferred qubie : QUBIE_INTERFACE 
 			deferred action_published : BOOLEAN
 				-> entry : OBJECT
-
+			
+			power_on
+				ensure
+					state = powered_on;
+					action_published(state)
+				end
 			start_booting 
 				require
 					powered_on; 

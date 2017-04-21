@@ -9,6 +9,7 @@
 
 #include <stdbool.h>
 #include <stddef.h>
+#include <string.h>
 
 static const state_t legal_update_states[] = {RUNNING, STOPPED, POWERED_OFF};
 //@design must be synced to typedef enum {POWERED_ON, BOOTING, RUNNING, STOPPED, POWERED_OFF} state_t;
@@ -17,10 +18,11 @@ const char *state_strings[] = {"powered on", "booting", "running", "stopped", "p
 //constructor
 qubie_t *make_qubie(){
 	qubie_t *qubie_struct = malloc(sizeof(struct qubie));
-
+	qubie_observations_t observations = make_qubie_observations("qubie_observations.csv");
 	qubie_struct->state = POWERED_ON;
 	qubie_struct->log = make_qubie_logger("qubie_log.txt");
-	qubie_struct->observations = make_qubie_observations("qubie_observations.csv");
+	memcpy((qubie_observations_t *)&qubie_struct->observations, &observations, sizeof(struct observations));
+	//free(&observations); //@TODO is this freed automatically when the function exists?
 	qubie_struct->wifi_monitor = make_wifi_monitor(qubie_struct);
 	qubie_struct->bt_communicator = make_bt_communicator(qubie_struct);
 	qubie_struct->legal_update_states = legal_update_states;
@@ -43,7 +45,7 @@ qubie_logger_t *get_log(qubie_t *self){
 	return self->log;
 };
 // pointer to qubie's observations, a list of contact records
-qubie_observations_t *observations(qubie_t *self){
+qubie_observations_t observations(qubie_t *self){
 	return self->observations;
 };
 // pointer to wifi monitor
@@ -111,6 +113,14 @@ void set_and_publish(qubie_t *self, state_t new_state){
 	qubie_publish_action(self, new_state);
 };
 
+/*@ TODO requires there is no other qubie;
+ *  ensures (state == POWERED_ON);
+ *  ensures action_published(state);
+ */
+void power_on(qubie_t *self){
+	set_and_publish(self, POWERED_ON);
+};
+
 /*@ requires (state == POWERED_ON);
  *  ensures (state == BOOTING);
  *  ensures action_published(state);
@@ -145,8 +155,15 @@ void stop_running(qubie_t *self){
 void power_off(qubie_t *self){
 	//@TBD move cleanup code to the relevant modules.
 	fclose(self->log->log_fp);
-	fclose(self->observations->observations_fp);
+	fclose(self->observations.observations_fp);
 	set_and_publish(self, POWERED_OFF);
+};
+
+//@ensures (state == RUNNING);
+void power_on_boot_and_run(qubie_t *self){
+	power_on(self);
+	start_booting(self);
+	start_running(self);
 };
 
 //@TODO define qubie_legal_update_state(the_state)
@@ -179,9 +196,11 @@ void qubie_publish_action(qubie_t *self, state_t the_state){
  * 	ensures log.logged()
  */
 //delta {observations, log}
-void record_observation(qubie_t *self, contact_record_t *the_contact_record){
+void record_observation(qubie_t *self, contact_record_t the_contact_record){
+	//@design the contract record belongs to observations which will eventually free the memory
+	//log the data from the log entry first, while it is certain to exist.
+	add_log_entry(self->log, QUBIE_DETECTED_DEVICE, &the_contact_record);
 	add_contact_record(self->observations, the_contact_record);
-	add_log_entry(self->log, QUBIE_DETECTED_DEVICE, the_contact_record);
 };
 
 

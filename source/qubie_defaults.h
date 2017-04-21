@@ -4,9 +4,10 @@
 #ifndef QUBIE_DEFAULTS
 #define QUBIE_DEFAULTS
 
+#define TEST_MODE true
 
 //change to false for unencrypted test mode
-#define ENCRYPTED_DEFAULT true
+#define ENCRYPTED_DEFAULT true //true
 
 //default value for wifi monitor auto hopping state
 #define WIFI_AUTO_HOPPING_DEFAULT true

@@ -41,6 +41,10 @@ scenario
 description
 	"Booted, Power Off"
 scenario
+	"Simple Test"
+description
+	"start booting, subscribe bt client,  Report Detected Device, bt client stop qubie, Power Off"
+scenario
 	"No Encryption"
 description
 	"Boot with encryption=False. Run and detect devices, Power Off"

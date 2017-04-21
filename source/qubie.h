@@ -18,7 +18,7 @@ state_t state(qubie_t *self);
 // pointer to qubie's log, a list of log entries with some added functionality
 qubie_logger_t *get_log(qubie_t *self);
 // pointer to qubie's observations, a list of contact records
-qubie_observations_t *observations(qubie_t *self);
+qubie_observations_t observations(qubie_t *self);
 // pointer to wifi monitor
 wifi_monitor_t *wifi_monitor(qubie_t *self);
 // pointer to bluetooth communicator
@@ -51,6 +51,12 @@ bool action_published(qubie_t *self, state_t the_state);
 // @bon COMMANDS
 // ====================================================================
 
+/*@ TODO requires there is no other qubie;
+ *  ensures (state == POWERED_ON);
+ *  ensures action_published(state);
+ */
+void power_on();
+
 /*@ requires (state == POWERED_ON);
  *  ensures (state == BOOTING);
  *  ensures action_published(state);
@@ -74,6 +80,9 @@ void stop_running(qubie_t *self);
  */
 void power_off(qubie_t *self);
 
+//@ensures (state == RUNNING);
+void power_on_boot_and_run(qubie_t *self);
+
 //@TODO define qubie_legal_update_state(the_state)
 /*@ requires qubie_legal_update_state(the_state);
  * 	ensures the_state == state;
@@ -88,7 +97,7 @@ void qubie_publish_action(qubie_t *self, state_t the_state);
  * 	ensures log.logged()
  */
 //delta {observations, log}
-void record_observation(qubie_t *self, contact_record_t *the_contact_record);
+void record_observation(qubie_t *self, contact_record_t the_contact_record);
 
 
 

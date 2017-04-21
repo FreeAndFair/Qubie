@@ -16,7 +16,7 @@ char *make_log_message(message_t message_type, void *message_val, qubie_time_t m
 	case QUBIE_DETECTED_DEVICE:
 		snprintf(buff, buff_size, "%lu device detected with ID:%s, rssi:%du, frequency: %du MHz",
 				(unsigned long)message_time,
-				((contact_record_t *)message_val)->device_id->identifier_string,
+				((contact_record_t *)message_val)->device_id.identifier_string,
 				(unsigned int)((contact_record_t *)message_val)->rssi,
 				(unsigned int)((contact_record_t *)message_val)->frequency
 				);
@@ -60,8 +60,9 @@ qubie_logger_t *make_qubie_logger(const char* filename){
 //destructors
 void free_log_entry(log_entry_t *the_entry){
 	if (the_entry) {
+		printf("DEBUG - freeing the log entry: %s\n",the_entry->message);
 		free(the_entry->message);
-		free(the_entry->message_val);
+		//free(the_entry->message_val);
 		free(the_entry);
 	}
 };

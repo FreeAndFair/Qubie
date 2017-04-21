@@ -8,7 +8,6 @@
 #include <stddef.h>
 #include <stdlib.h>
 
-//@TODO is there a better way to define and store this data?
 static const state_t bt_communicator_legal_update_states[2] = {STOPPED, POWERED_OFF};
 
 //constructor
