@@ -8,15 +8,23 @@
 #include <stddef.h>
 #include <stdlib.h>
 
-static const state_t bt_communicator_legal_update_states[2] = {STOPPED, POWERED_OFF};
+//globals
+//@design for internal use
+extern qubie_t the_qubie;
+static bt_communicator_t *self = &the_qubie.bt_communicator;
+//@design for export to bt_client which does not have direct access to the_qubie
+bt_communicator_t *the_communicator = &the_qubie.bt_communicator;
+
+
+//@TODO remove static const state_t bt_communicator_legal_update_states[2] = {STOPPED, POWERED_OFF};
 
 //constructor
 bt_communicator_t *make_bt_communicator(qubie_t *qubie){
 	bt_communicator_t *bt_communicator_struct = malloc(sizeof(struct bt_communicator));
 	bt_communicator_struct->subscribed = false;
 	bt_communicator_struct->bt_client = NULL;
-	bt_communicator_struct->qubie = qubie;
-	bt_communicator_struct->legal_update_states=bt_communicator_legal_update_states;
+	//bt_communicator_struct->qubie = qubie;
+	//@TODO bt_communicator_struct->legal_update_states=bt_communicator_legal_update_states;
 	return bt_communicator_struct;
 };
 
@@ -31,42 +39,42 @@ bt_communicator_t *make_bt_communicator(qubie_t *qubie){
 
 // qubie status
 //@ ensures Result == qubie.state
-state_t bt_communicator_qubie_state(bt_communicator_t *self){
-	return state(self->qubie);
+state_t bt_communicator_qubie_state(){
+	return state();
 };
 
 //pointer to the qubie module that is connected to this communicator
 // moved to central location: qubie_t qubie();
 
 // pointer to qubie's log, a list of log entries with some added functionality
-qubie_logger_t *get_qubie_log(bt_communicator_t *self){
-	return get_log(self->qubie);
+qubie_logger_t *get_qubie_log(){
+	return get_log();
 };
 
-bool subscribed(bt_communicator_t *self){
+bool subscribed(){
 	return self->subscribed;
 };
 //@ requires subscribed
-bt_client_t *bt_client(bt_communicator_t *self){
+bt_client_t *bt_client(){
 	return self->bt_client;
 };
 
-/*@ ensure !subscribed or bt_client.received(the_state);
+/*@ ensure !subscribed or bt_client.published(the_state);
  *
  */
-bool bt_communicator_action_published(bt_communicator_t *self, state_t the_state){
+bool bt_communicator_action_published( state_t the_state){
 	bool Result = false;
 	if (!self->subscribed) {
 		Result = true; //published to the empty set or clients
 	} else {
-		Result = received(self->bt_client,the_state);
+		Result = published(the_state);
 	}
 	return Result;
 };
 
 /*@ ensures {stopped, powered_off} == Result;
  */
-const state_t *get_bt_communicator_legal_update_states(bt_communicator_t *self){
+const state_t *get_bt_communicator_legal_update_states(){
 	return self->legal_update_states;
 };
 
@@ -84,7 +92,7 @@ const state_t *get_bt_communicator_legal_update_states(bt_communicator_t *self){
  * 	ensures subscribed;
  */
 //@ delta {bt_client, subscribed};
-void subscribe(bt_communicator_t *self, bt_client_t *the_bluetooth_client){
+void subscribe( bt_client_t *the_bluetooth_client){
 	self->bt_client = the_bluetooth_client;
 	self->subscribed = true;
 };
@@ -93,24 +101,24 @@ void subscribe(bt_communicator_t *self, bt_client_t *the_bluetooth_client){
  * 	ensures !subscribed;
  */
 //@ delta {bt_client, subscribed};
-void unsubscribe(bt_communicator_t *self){
+void unsubscribe(){
 	self->bt_client = NULL;
 	self->subscribed = false;
 };
 
-/*@ ensures !subscribed || bt_client.received(the_state)
+/*@ ensures !subscribed || bt_client.published(the_state)
  */
-void bt_communicator_publish_action(bt_communicator_t *self, state_t the_state){
+void bt_communicator_publish_action( state_t the_state){
 	if (self->subscribed) {
-		receive_state(self->bt_client, the_state);
+		publish_from_bt_communicator(the_state);
 	};
 };
 
 /*@ requires the_state in bt_communicator_legal_update_states;
  * 	ensures the_state == qubie.state;
  */
-void bt_communicator_update_qubie_state(bt_communicator_t *self, state_t the_state){
-	update_state(self->qubie, the_state);
+void bt_communicator_update_qubie_state( state_t the_state){
+	update_state( the_state);
 };
 
 

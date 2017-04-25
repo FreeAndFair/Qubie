@@ -32,5 +32,7 @@
 #define NUM_WIFI_CHANNELS 68
 #define WIFI_FREQUENCY_DEFAULT 2412
 
+//the maximum length of a log message (including null terminator)
+#define MAX_MESSAGE_LEN 512
 
 #endif

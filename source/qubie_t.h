@@ -75,48 +75,45 @@ typedef struct observations {
 } qubie_observations_t;
 
 typedef struct log_entry {
-	 char* message;
-	qubie_time_t time;
-	message_t message_type;
-	void *message_val;
+	char const message[MAX_MESSAGE_LEN];
+	const qubie_time_t time;
+	//const message_t message_type;
+	//void *message_val; //@TBD const?
 } log_entry_t;
 
 typedef struct qubie_logger {
 	unsigned int size;
-	log_entry_t* last_entry;
+	//log_entry_t* last_entry;
 	FILE *log_fp;
 }qubie_logger_t;
 
 typedef void* hash_t; //@TODO
 typedef struct keyed_hash {
 	bool set;
-	qubie_key_t *key;
-	hash_t hash;
+	qubie_key_t key;
+	//hash_t hash;
 }keyed_hash_t;
 
 typedef struct bt_client bt_client_t;
 
 typedef struct qubie qubie_t;
 
-//@ ensures qubie == Result
-qubie_t *get_qubie();
-
 typedef struct wifi_monitor {
 	bool wifi_booted;
 	bool wifi_running;
 	bool auto_hopping;
-	keyed_hash_t *keyed_hash;
-	const frequency_t *frequency_range;
-	frequency_t frequency;
-	qubie_t *qubie; //pointer to qubie
+	keyed_hash_t keyed_hash;
+	frequency_t const frequency_range[NUM_WIFI_CHANNELS]; // FREQUENCY_WIFI_CHANNELS;
+	frequency_t frequency; // WIFI_FREQUENCY_DEFAULT;
+	//const qubie_t const *qubie; //pointer to qubie
 } wifi_monitor_t;
 //static const char *wifi_state_strings[] = {"booted", "running"};
 
 typedef struct bt_communicator {
 	bool subscribed;
 	bt_client_t *bt_client;
-	qubie_t *qubie;
-	state_t const *legal_update_states;
+	//const qubie_t *qubie; //@TODO erase
+	state_t const legal_update_states[2]; //{STOPPED, POWERED_OFF};
 } bt_communicator_t;
 
 typedef struct bt_client {
@@ -129,15 +126,15 @@ typedef struct qubie {
 	// qubie status
 	state_t state;
 	// pointer to qubie's log, a list of log entries with somee added functionality
-	qubie_logger_t *log;
+	qubie_logger_t log;
 	// pointer to qubie's observations, a set of contact records
-	qubie_observations_t const observations;
+	qubie_observations_t observations;
 	// pointer to wifi monitor
-	wifi_monitor_t *wifi_monitor;
+	wifi_monitor_t wifi_monitor;
 	// pointer to bluetooth communicator
-	bt_communicator_t *bt_communicator;
+	bt_communicator_t bt_communicator;
 	// "qubie" querie just points to "this" so it is not needed here
-	state_t const *legal_update_states;
+	state_t const legal_update_states[3]; //{RUNNING, STOPPED, POWERED_OFF};
 } qubie_t;
 #endif
 

@@ -24,7 +24,7 @@ component
 			deferred log : LOG
 			deferred qubie : QUBIE_INTERFACE 
 			deferred action_published : BOOLEAN
-				-> entry : OBJECT
+				-> entry : ANY
 			
 			power_on
 				ensure
@@ -34,10 +34,10 @@ component
 			start_booting 
 				require
 					powered_on; 
-					--power_on or stopped; //currently soft reset is not allowed
+					--power_on or stopped; --currently soft reset is not allowed
 				ensure
 					state = booting;
-					action_published(state);
+					action_published(state);	
 				end
 			start_running -- : Void 
 				require
@@ -82,21 +82,22 @@ component
 		effective class QUBIE
 		inherit QUBIE_INTERFACE
 		feature
-			
+			--TODO do I need to define the ">" operator for QUBIE_STATE?
 			observations : OBSERVATIONS
-				require not booting end	
+				require state > booting end	
 			wifi_monitor : WIFI_MONITOR
-				require not booting end
+				require state > booting end
 			bt_communicator : BLUETOOTH_COMMUNICATOR
-				require not booting end
+				require state > booting end
 			effective log : LOG
-			effective qubie : QUBIE 
-				ensure Result = Current; end
+			initialized : BOOLEAN --TODO get consensus on syntax
+				ensure 
+					Result = log.empty and observations.empty;
+				end
 			effective action_published : BOOLEAN
 				-> the_state : QUBIE_STATE
 				ensure
-					Result = log.logged(Current) and 
-						(bt_communicator.subscribed -> bt_communicator.action_published(the_state));		
+					Result = log.logged(Current) and bt_communicator.action_published(the_state);		
 				end
 			effective publish_action
 				-> the_state : QUBIE_STATE
@@ -107,18 +108,18 @@ component
 
 			redefined legal_update_states : SET[QUBIE_STATE]
 				ensure Result = {stopped, powered_off}; end
-
+			power_on_boot_and_run
+				require
+					powered_on;
+				ensure
+					running;
+				end
 			record_observation 
 				-> contact_record : CONTACT_RECORD
 				ensure 
 					delta {observations, log}; --if observations is a sequence/list we could limit to observations(size)
 					observations.contains(contact_record);
 					log.logged(Current)
-				end
-			initialized --TODO get consensus on syntax
-				ensure 
-					log.empty;
-					observations.empty;
 				end
 
 --		constraint
@@ -258,13 +259,16 @@ component
 	class BLUETOOTH_CLIENT 
 	feature
 		bt_communicator : BLUETOOTH_COMMUNICATOR
-		received : BOOLEAN
+		qubie_state : QUBIE_STATE
+		published : BOOLEAN
 			-> the_state : QUBIE_STATE
-		receive
+			ensure qubie_state = the_state; end
+		publish_from_bt_communicator
 			-> the_state : QUBIE_STATE
 			ensure 
 				delta Current;
-				received(the_state); 
+				qubie_state = the_state;
+				published(the_state); 
 			end
 		update_qubie_state
 			the_state : QUBIE_STATE
@@ -272,7 +276,7 @@ component
 				--bt_communicator.bt_client = Current; --TODO? is this obvious?
 			ensure 
 				bt_communicator.qubie_state = the_state;
-				received(the_state); 
+				published(the_state); 
 			end
 	end
 end	
@@ -363,12 +367,12 @@ component
 		empty : BOOLEAN
 			ensure Result = (size = 0); end
 		logged : BOOLEAN
-			-> entry : OBJECT
+			-> entry : ANY
 			ensure
 				delta element(size);
 			end			
 		log
-			-> entry : OBJECT
+			-> entry : ANY
 			ensure
 				logged(entry);
 			end

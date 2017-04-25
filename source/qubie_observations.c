@@ -13,19 +13,23 @@
 #include <string.h>
 
 
+//globals
+extern qubie_t the_qubie;
+static qubie_observations_t *self = &the_qubie.observations;
+
 //helper functions
 /*@ ensures observations_contains(the_contact_record);
  */
 //@design format: device,time,rssi,frequency
-void __write_contact_record_to_file(qubie_observations_t self, contact_record_t the_contact_record){
+void __write_contact_record_to_file( contact_record_t the_contact_record){
 	//@TBD do I need to implement according to binary files?
-	fprintf(self.observations_fp, "%s,%lu,%d,%d\n",
+	fprintf(self->observations_fp, "%s,%lu,%d,%d\n",
 			the_contact_record.device_id.identifier_string,
 			the_contact_record.contact_time,
 			the_contact_record.rssi,
 			the_contact_record.frequency
 			);
-	fflush(self.observations_fp);
+	fflush(self->observations_fp);
 };
 
 //constructors
@@ -56,13 +60,13 @@ contact_record_t make_contact_record( device_id_t const device_id,
 	return *contact_record_struct;
 };
 
-device_id_t make_device_id(keyed_hash_t *hash, mac_t *raw_identifier){
+device_id_t make_device_id(mac_t raw_identifier){
 	device_id_t *device_id_struct = malloc(sizeof(struct device_id));
 	char const * identifier_string;
 	device_id_struct->encrypted = ENCRYPTED_DEFAULT;
 	//@assert(ENCRYPTED_DEFAULT || TEST_MODE);
 	assert(ENCRYPTED_DEFAULT || TEST_MODE);
-	identifier_string = hashed_string(hash, device_id_struct->encrypted, raw_identifier);
+	identifier_string = hashed_string(device_id_struct->encrypted, raw_identifier);
 	strncpy((char *)device_id_struct->identifier_string, identifier_string, MAC_STRING_LEN);
 	free((void *)identifier_string);
 	return *device_id_struct;
@@ -81,9 +85,9 @@ void free_contact_record(contact_record_t the_contact_record){
 // ====================================================================
 
 //@ ensures (0 == size) == Result
-bool observations_empty(qubie_observations_t self){
+bool observations_empty(){
 	//assumes linked list format
-	return 0 == self.size;
+	return 0 == self->size;
 };
 
 /*
@@ -98,7 +102,7 @@ bool contact_records_match(contact_record_t *cr1, contact_record_t *cr2){
 /*@ensures the_contact_record in observations
  *@design this function is never used. it is only to fulfill a contract.
  */
-bool observations_contains(qubie_observations_t self, contact_record_t the_contact_record){
+bool observations_contains( contact_record_t the_contact_record){
 	//@assert(false)
 	assert(false);
 	return false;
@@ -110,11 +114,11 @@ bool observations_contains(qubie_observations_t self, contact_record_t the_conta
 /*@ ensures old size + 1 == size;
  * 	ensures observations_contains(the_contact_record);
  */
-void add_contact_record(qubie_observations_t self, contact_record_t the_contact_record){
+void add_contact_record( contact_record_t the_contact_record){
 	//free_contact_record(self.last);
 	//self.last = the_contact_record;
-	__write_contact_record_to_file(self, the_contact_record);
-	self.size++;
+	__write_contact_record_to_file(the_contact_record);
+	self->size++;
 };
 
 

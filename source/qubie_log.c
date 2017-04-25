@@ -5,11 +5,24 @@
 #include <sodium.h>
 #include <time.h> //@TODO take only what is needed from this library
 #include <assert.h>
+#include <string.h>
 
-char *make_log_message(message_t message_type, void *message_val, qubie_time_t message_time){
+//globals
+extern qubie_t the_qubie;
+static qubie_logger_t *self = &the_qubie.log;
+
+//helper functions
+void __write_log_entry_to_file( log_entry_t the_entry){
+	fprintf(self->log_fp, "%s\n", the_entry.message);
+	fflush(self->log_fp);
+};
+
+
+//constructors
+char const *make_log_message(message_t message_type, void *message_val, qubie_time_t message_time){
 	int buff_size = 512;
 	char *buff = malloc(sizeof(char) * buff_size);
-	switch(message_type){
+	switch((int)message_type){
 	case QUBIE_STATE:
 		snprintf(buff, buff_size, "%lu qubie state changed to: %s", (unsigned long)message_time, (char *)message_val);
 		break;
@@ -35,36 +48,25 @@ char *make_log_message(message_t message_type, void *message_val, qubie_time_t m
 		assert(false);
 
 	}
-	return buff;
+	return (char const *)buff;
 };
 
-
-//constructors
-log_entry_t *make_log_entry(message_t message_type, void* message_val){
+log_entry_t make_log_entry(message_t message_type, void* message_val){
 	log_entry_t *log_entry_struct = malloc(sizeof(struct log_entry));
 	qubie_time_t message_time = current_time(NULL);
-	char *message = make_log_message(message_type, message_val, message_time);
-	log_entry_struct->message = message;
-	log_entry_struct->time = message_time;
-	return log_entry_struct;
+	char const *message = make_log_message(message_type, message_val, message_time);
+	memcpy((char *)log_entry_struct->message, message, sizeof(char[MAX_MESSAGE_LEN]));
+	free((char *)message);
+	*(qubie_time_t *)&log_entry_struct->time = message_time;
+	return *log_entry_struct;
 };
 
-qubie_logger_t *make_qubie_logger(const char* filename){
+qubie_logger_t make_qubie_logger(const char* filename){
 	qubie_logger_t *qubie_logger_struct = malloc(sizeof(struct qubie_logger));
 	qubie_logger_struct->size = 0;
-	qubie_logger_struct->last_entry=NULL;
+	//qubie_logger_struct->last_entry=NULL;
 	qubie_logger_struct->log_fp = fopen(filename, "w");
-	return qubie_logger_struct;
-};
-
-//destructors
-void free_log_entry(log_entry_t *the_entry){
-	if (the_entry) {
-		printf("DEBUG - freeing the log entry: %s\n",the_entry->message);
-		free(the_entry->message);
-		//free(the_entry->message_val);
-		free(the_entry);
-	}
+	return *qubie_logger_struct;
 };
 
 // ====================================================================
@@ -72,17 +74,20 @@ void free_log_entry(log_entry_t *the_entry){
 // ====================================================================
 
 //@ ensures (0 == size) == Result
-bool log_empty(qubie_logger_t *self){
+bool log_empty(){
 	return 0==self->size;
 };
 
-/*@ TODO ensures log_contains(the_log_entry);
- */
-bool logged(qubie_logger_t *self, message_t message_type, void* message_val){
+/*@design this method is only for defining contracts
 
-	return (self->last_entry) &&
-			(message_type == self->last_entry->message_type) &&
-			(message_val == self->last_entry->message_val);
+ */
+bool logged( message_t message_type, void* message_val){
+	//@assert(false)
+	assert(false);
+	//return (self->last_entry) &&
+	//		(message_type == self->last_entry->message_type) &&
+	//		(message_val == self->last_entry->message_val);
+	return false;
 };
 
 qubie_time_t current_time(qubie_time_t *seconds){
@@ -95,21 +100,14 @@ qubie_time_t current_time(qubie_time_t *seconds){
 // ====================================================================
 
 
-void write_log_entry_to_file(qubie_logger_t *self, log_entry_t *the_entry){
-	fprintf(self->log_fp, "%s\n", the_entry->message);
-	fflush(self->log_fp);
-};
-
-
-
 /*@ ensures logged(message_type, message_val);
  *  @TODO ensures delta log[size];
  */
-void add_log_entry(qubie_logger_t *self, message_t message_type, void* message_val){
-	log_entry_t *the_entry = make_log_entry(message_type, message_val);
-	write_log_entry_to_file(self, the_entry);
-	free_log_entry(self->last_entry);
-	self->last_entry = the_entry;
+void add_log_entry( message_t message_type, void* message_val){
+	log_entry_t the_entry = make_log_entry(message_type, message_val);
+	__write_log_entry_to_file(the_entry);
+	//free_log_entry(self->last_entry);
+	//self->last_entry = the_entry;
 };
 
 

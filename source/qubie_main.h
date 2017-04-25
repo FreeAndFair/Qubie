@@ -2,5 +2,5 @@
 
 #include "qubie_t.h"
 
-void SimpleTest(qubie_t *self);
+void SimpleTest();
 
