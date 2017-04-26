@@ -24,10 +24,11 @@ frequency_t frequency();
 // @bon COMMANDS
 // ====================================================================
 
-/*@ requires !booted
- * 	ensures booted
- * 	ensures keyed_hash.set();
- * 	ensures qubie.log.logged(WIFI_MONITOR_STATE, "booted")
+/* @requires !booted
+ * @ensures booted
+ * @ensures keyed_hash.set();
+ * @ensures qubie.log.logged(WIFI_MONITOR_STATE, "booted")
+ * @TODO ensures frequency in frequency_range
  */
 void boot_wifi();
 

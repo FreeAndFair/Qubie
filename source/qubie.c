@@ -6,6 +6,8 @@
 #include "qubie_log.h"
 #include "qubie_observations.h"
 #include "qubie_wifi_monitor.h"
+#include "qubie_bt_client.h"
+#include "wifi_stub.h"
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -31,7 +33,9 @@ qubie_t the_qubie = {
 				.auto_hopping = WIFI_AUTO_HOPPING_DEFAULT,
 				.keyed_hash = {
 					.set = false
-				}
+				},
+				.frequency_range = FREQUENCY_WIFI_CHANNELS
+				//@design frequency field will be initialized in boot stage
 		},
 		.bt_communicator = {
 				.subscribed = false,
@@ -251,7 +255,19 @@ void record_observation( contact_record_t the_contact_record){
 };
 
 
-
+/* @requires running()
+ * @TODO ensures wifi_monitor and bt_client are polled
+ * @ensures state > running;
+ */
+void run_loop(){
+	unsigned long iterations = 0;
+	while (running() && ++iterations < MAX_TEST_ITERATIONS){
+		printf("DEBUG - iteration: %lu\n",iterations);
+		report_random_device();
+		update_monitored_frequency();
+		poll_bt_client();
+	}
+};
 
 
 

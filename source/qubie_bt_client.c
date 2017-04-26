@@ -10,6 +10,8 @@
 bt_client_t the_bt_client;
 static bt_client_t *self = &the_bt_client;
 
+//helper functions
+
 //constructor
 bt_client_t *make_bt_client(bt_communicator_t *bt_communicator){
 	/*
@@ -56,6 +58,30 @@ void publish_from_bt_communicator( state_t the_state){
 void bt_client_update_qubie_state( state_t the_state){
 	bt_communicator_update_qubie_state(the_state);
 };
+
+/*@ requires !subscribed()
+ *@ ensures subscribed()
+ */
+void create_and_subscribe_bt_client(){
+	bt_client_t *the_bt_client = make_bt_client(bt_client_communicator());
+	subscribe(the_bt_client);
+};
+
+void poll_bt_client(){
+
+	unsigned int rand_val = (rand() % 10000);
+	if(subscribed()){
+		if (rand_val <= 0) {
+			bt_client_update_qubie_state(STOPPED);
+		};
+	};
+	//@TODO add additional functionality: subscribe/unsubscribe, power_off, etc.
+};
+
+
+
+
+
 
 
 

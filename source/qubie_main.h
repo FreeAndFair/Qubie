@@ -4,3 +4,5 @@
 
 void SimpleTest();
 
+void NormalTest();
+

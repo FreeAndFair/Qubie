@@ -10,7 +10,7 @@ SOURCE_FILES = qubie_bt_communicator.c qubie_bt_communicator.h qubie.c \
 				qubie_defaults.h qubie.h qubie_keyed_hash.c qubie_keyed_hash.h \
 				qubie_log.c qubie_log.h qubie_main.c qubie_main.h qubie_observations.c \
 				qubie_observations.h qubie_t.h qubie_wifi_monitor.c qubie_wifi_monitor.h
-STUB_FILES = qubie_bt_client.c qubie_bt_client.h
+STUB_FILES = qubie_bt_client.c qubie_bt_client.h wifi_stub.h wifi_stub.c
 REQUIREMENTS = 
 BON_FILES =  $(INFORMAL_BON_FILES) $(FORMAL_BON_FILES) $(REQUIREMENTS)
 
@@ -20,10 +20,10 @@ BON_FILES =  $(INFORMAL_BON_FILES) $(FORMAL_BON_FILES) $(REQUIREMENTS)
 	typecheck-static typecheck-dynamic
 
 all: main typecheck $(SYSTEM)-iig.dot index.txt index.html html/index.html
-	
+
 main: $(SOURCE_FILES) $(STUB_FILES)
 	$(CC) $(CFLAGS) -o $(SYSTEM)_main  $(SOURCE_FILES) $(STUB_FILES)  $(LDFLAGS) 
-	 
+
 
 typecheck: typecheck-informal typecheck-formal \
 	typecheck-static typecheck-dynamic typecheck-consistency

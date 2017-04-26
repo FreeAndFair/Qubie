@@ -81,7 +81,7 @@ void stop_running();
  */
 void power_off();
 
-/* @requires (state == POWERED_ON);
+/* @requires (state < BOOTING);
  * @ensures (state == RUNNING);
  */
 void power_on_boot_and_run();
@@ -103,7 +103,11 @@ void qubie_publish_action( state_t the_state);
 void record_observation( contact_record_t the_contact_record);
 
 
-
+/* @requires running()
+ * @TODO ensures wifi_monitor and bt_client are polled
+ * @ensures state > running;
+ */
+void run_loop();
 
 
 

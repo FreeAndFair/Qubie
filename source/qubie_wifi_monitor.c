@@ -57,15 +57,17 @@ frequency_t frequency(){
 // @bon COMMANDS
 // ====================================================================
 
-/*@ requires !booted
- * 	ensures booted
- * 	ensures keyed_hash.set();
- * 	ensures qubie.log.logged(WIFI_MONITOR_STATE, "booted")
+/* @requires !booted
+ * @ensures booted
+ * @ensures keyed_hash.set();
+ * @ensures qubie.log.logged(WIFI_MONITOR_STATE, "booted")
+ * @TODO ensures frequency in frequency_range
  */
 void boot_wifi(){
 	qubie_key_t *the_key = create_random_key();
 	set_key(the_key);
 	free(the_key);
+	self->frequency = self->frequency_range[WIFI_CHANNEL_DEFAULT];
 	//@TODO boot actual wifi device
 	add_log_entry(WIFI_MONITOR_STATE, (void *)"booted");
 	self->wifi_booted = true;
@@ -122,11 +124,11 @@ void report_detected_device(
 		rssi_t the_signal_strength,
 		frequency_t the_frequency
 		){
-	printf("DEBUG - making device id\n");
+	//printf("DEBUG - making device id\n");
 	device_id_t the_device_id = make_device_id(the_mac_address);
-	printf("DEBUG - making contact record\n");
+	//printf("DEBUG - making contact record\n");
 	contact_record_t the_contact_record = make_contact_record(the_device_id, current_time(NULL), the_signal_strength, the_frequency);
-	printf("DEBUG - recording observation\n");
+	//printf("DEBUG - recording observation\n");
 	record_observation(the_contact_record);
 };
 

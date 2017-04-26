@@ -35,4 +35,11 @@ void publish_from_bt_communicator( state_t the_state);
  */
 void bt_client_update_qubie_state( state_t the_state);
 
+/*@ requires !subscribed()
+ *@ ensures subscribed()
+ */
+void create_and_subscribe_bt_client();
+
+void poll_bt_client();
+
 

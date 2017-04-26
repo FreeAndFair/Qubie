@@ -27,7 +27,7 @@ char const *make_log_message(message_t message_type, void *message_val, qubie_ti
 		snprintf(buff, buff_size, "%lu qubie state changed to: %s", (unsigned long)message_time, (char *)message_val);
 		break;
 	case QUBIE_DETECTED_DEVICE:
-		snprintf(buff, buff_size, "%lu device detected with ID:%s, rssi:%du, frequency: %du MHz",
+		snprintf(buff, buff_size, "%lu device detected with ID:%s, rssi:%d, frequency: %d MHz",
 				(unsigned long)message_time,
 				((contact_record_t *)message_val)->device_id.identifier_string,
 				(unsigned int)((contact_record_t *)message_val)->rssi,
@@ -38,10 +38,10 @@ char const *make_log_message(message_t message_type, void *message_val, qubie_ti
 		snprintf(buff, buff_size, "%lu wifi monitor %s", (unsigned long)message_time, (char *)message_val);
 		break;
 	case WIFI_MONITOR_FREQUENCY:
-		snprintf(buff, buff_size, "%lu wifi monitor frequency changed to: %du", (unsigned long)message_time, (unsigned int)message_val);
+		snprintf(buff, buff_size, "%lu wifi monitor frequency changed to: %d", (unsigned long)message_time, (unsigned int)message_val);
 		break;
 	case WIFI_MONITOR_AUTO_HOPPING:
-		snprintf(buff, buff_size, "%lu wifi monitor auto hopping set to: %du",(unsigned long) message_time, (unsigned int)message_val);
+		snprintf(buff, buff_size, "%lu wifi monitor auto hopping set to: %d",(unsigned long) message_time, (unsigned int)message_val);
 		break;
 	default:
 		//assert(false)
