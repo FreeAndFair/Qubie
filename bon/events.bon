@@ -7,21 +7,19 @@ explanation
 part
   "1/1"
 event "Power On"
-involves TBD --TODO? does this mean that qubie is interfaced? in general this effects all modules
-event "Wifi Device Detected"
-involves WIFI_MONITOR, OBSERVATIONS --TODO? do I need to include indirectly involved classes such as CONTACT_RECORD, KEYED HASH
-event "Bluetooth client subscribed"
-involves BLUETOOTH_CLIENT, BLUETOOTH_COMMUNICATOR --TODO? , WIFI_MONITOR
-event "Bluetooth client not found"
-involves BLUETOOTH_CLIENT, BLUETOOTH_COMMUNICATOR --TODO? , WIFI_MONITOR
-event "Bluetooth client sets auto_hopping value"
+involves QUBIE, LOG, OBSERVATIONS
+event "Detect Device"
+involves WIFI_MONITOR, OBSERVATIONS 
+event "Subscribe Bluetooth client"
+involves BLUETOOTH_CLIENT, BLUETOOTH_COMMUNICATOR 
+event "Unsubscribe Bluetooth Client"
 involves BLUETOOTH_CLIENT, BLUETOOTH_COMMUNICATOR
-event "Bluetooth client instructs Qubie to stop"
+event "Bluetooth Client Command to Stop"
 involves BLUETOOTH_CLIENT, BLUETOOTH_COMMUNICATOR, QUBIE
-event "Bluetooth client unsubscribes"
-involves BLUETOOTH_CLIENT, BLUETOOTH_COMMUNICATOR
+event "Bluetooth Client Command to Power Off"
+involves BLUETOOTH_CLIENT, BLUETOOTH_COMMUNICATOR, QUBIE
 event "Power Off"
-involves LOG
+involves QUBIE, LOG
 end
 
 
@@ -34,43 +32,36 @@ explanation
   "External events triggered by Qubie behavior."
 part
   "1/1"
-event "Empty Log Created"
+event "Create Empty Log"
 involves LOG  
-event "Empty Observations Created"
-involves OBSERVATIONS, CONTACT_RECORD,WIFI_MONITOR
---event "Looking for Bluetooth Client"
---involves BLUETOOTH_COMMUNICATOR
-event " Wifi Monitor Boot Success"
+event "Create Empty Observations"
+involves OBSERVATIONS
+event "Boot Wifi Monitor"
+involves WIFI_MONITOR, QUBIE, KEYED_HASH
+event "Start Wifi Monitor"
 involves WIFI_MONITOR, QUBIE 
-event " Wifi Monitor Boot Failure"
-involves WIFI_MONITOR, QUBIE 
-event "Keyed Hash Set"
+event "Set Keyed Hash"
 involves WIFI_MONITOR, KEYED_HASH
 event "Wifi Monitor Auto-Hopping On"
-involves WIFI_MONITOR --TODO? , BLUETOOTH_COMMUNICATOR, BLUETOOTH_CLIENT
+involves WIFI_MONITOR
 event "Wifi Monitor Auto-Hopping Off"
-involves WIFI_MONITOR --TODO? , BLUETOOTH_COMMUNICATOR, BLUETOOTH_CLIENT
+involves WIFI_MONITOR
 event "Wifi Monitor sets Frequency"
 involves WIFI_MONITOR, FREQUENCY
-event "Wifi Monitor searches for devices"
-involves WIFI_MONITOR
-event "Qubie boot Success"
+event "Boot Qubie"
 involves QUBIE, LOG
-event "Qubie boot Fail"
-involves QUBIE, LOG
-event "Bluetooth communicator boot Success"
-involves BLUETOOTH_COMMUNICATOR, LOG
-event "Bluetooth communicator boot Fail"
-involves BLUETOOTH_COMMUNICATOR, LOG
-event "Qubie starts running"
+event "Start Qubie"
 involves QUBIE, WIFI_MONITOR
-event "Device Detected"
-involves WIFI_MONITOR
-event "Observation Recorded"
+event "Create Contact Record"
+involves WIFI_MONITOR, CONTACT_RECORD, KEYED_HASH
+event "Record Observation"
 involves OBSERVATIONS, CONTACT_RECORD
-event "Qubie stops Running"
-involves QUBIE, WIFI_MONITOR, BLUETOOTH_COMMUNICATOR
---TODO? does LOG needed to be added to (almost) all of the events?
+event "Stop Qubie"
+involves QUBIE, WIFI_MONITOR, BLUETOOTH_COMMUNICATOR, LOG
+event "Update Bluetooth Client"
+involves BLUETOOTH_CLIENT, BLUETOOTH_COMMUNICATOR, QUBIE
+event "Log Event"
+involves LOG
 
 end
 

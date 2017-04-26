@@ -30,7 +30,13 @@ void init_random_number_generator(){
 };
 
 
+//"Power On, Boot Qubie, Start Qubie, Power Off"
+void SmokeTest(){
+	power_on_boot_and_run();
+	power_off();
+};
 
+//"Power On, Boot Qubie, Start Qubie, Subscribe Bluetooth Client, Detect Device, Bluetooth Client Command to Stop, Bluetooth Client Command to Power Off, Power Off"
 void SimpleTest(){
 	power_on_boot_and_run();
 	create_and_subscribe_bt_client();
@@ -39,6 +45,7 @@ void SimpleTest(){
 	bt_communicator_update_qubie_state(POWERED_OFF);
 };
 
+//"Power On, Boot Qubie, Start Qubie, Subscribe Bluetooth Client, Detect Devices, Change Frequency, Bluetooth Client Command to Stop, Bluetooth Client Command to Power Off, Power Off"
 void NormalTest(){
 	init_random_number_generator();
 	power_on_boot_and_run();
@@ -47,13 +54,23 @@ void NormalTest(){
 	bt_communicator_update_qubie_state(POWERED_OFF);
 };
 
+//TBD --include multiple subscribe/unsubscribe and multiple options of detecting devices on differnt frequencies
+//@TODO
+void FullTest(){
+	//@assert(false)
+	assert(false);
+};
+
+//"Normal Test but with encrypted=false"
+//@design implemented by NormalTest and setting #define ENCRYPTED false
+void UnencryptedTest(){
+	//@assert(false)
+	assert(false);
+};
 
 int main(void){
 	printf("hello qubie\n\r");
-	//qubie_t *my_qubie = make_qubie();
-	//printf("my qubie is booting:%d, running:%d, stopped:%d\n", booting(my_qubie), running(my_qubie), stopped(my_qubie));
-	//@TODO implement
-	//printf("DEBUG - starting simple test\n");
+	//SmokeTest();
 	//SimpleTest();
 	NormalTest();
 	return 0;

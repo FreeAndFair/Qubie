@@ -1,53 +1,27 @@
 
-	
-scenario_chart QUBIE_STATE_SCENAIROS
-explanation 
-	"the top level states qubie can be in"
-scenario
-	"Powered up"
-description
-	"Power on, Empty Log Created, Empty Observations Created"
-scenario
-	"Booted"
-description
-	"Powered up, Bluetooth Communicator boot Success, Keyed Hash Set, Wifi Monitor Boot Success, Qubie Boot Success"	
-scenario
-	"Booted with Bluetooth Client"
-description
-	"Powered up, Bluetooth Communicator boot Success, Bluetooth Client Subscribed, Keyed Hash Set, Wifi Monitor Boot Success, Qubie Boot Success"	
-scenario
-	"Running"
-description
-	"Booted, Qubie starts running, Wifi Monitor sets Frequency, Wifi Monitor searches for devices"
-scenario
-	"Detecting"
-description
-	"Running, Device Detected, Observation Recorded"	
-scenario 
-	"Stopped"
-description
-	"Running, Bluetooth client instructs Qubie to stop, Qubie stops Running"
-scenario
-	"Powered Off Nicely"
-description
-	"Stopped, Power Off"
-end
-
-scenario_chart QUBIE_TEST_SCENARIOS
+scenario_chart QUBIE_TOP_LEVEL_SCENARIOS
 explanation
-	"specific scenarios that can be helpful for testing. They are not necessarily possible in non-test environment"
+	"specific scenarios to describe general qubie usage, including usage that is only for testing "
 scenario
 	"Smoke Test"
 description
-	"Booted, Power Off"
+	"Power On, Boot Qubie, Start Qubie, Power Off"
 scenario
 	"Simple Test"
 description
-	"start booting, subscribe bt client,  Report Detected Device, bt client stop qubie, Power Off"
+	"Power On, Boot Qubie, Start Qubie, Subscribe Bluetooth Client, Detect Device, Bluetooth Client Command to Stop, Bluetooth Client Command to Power Off, Power Off"
 scenario
-	"No Encryption"
+	"Normal Test"
 description
-	"Boot with encryption=False. Run and detect devices, Power Off"
+	"Power On, Boot Qubie, Start Qubie, Subscribe Bluetooth Client, Detect Devices, Change Frequency, Bluetooth Client Command to Stop, Bluetooth Client Command to Power Off, Power Off"
+scenario
+	"Full Test"
+description
+	"TBD" --TODO include multiple subscribe/unsubscribe and multiple options of detecting devices on differnt frequencies
+scenario
+	"Unencrypted Test"
+description
+	"Normal Test but with encrypted=false"
 end
 	
 	
