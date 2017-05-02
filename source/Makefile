@@ -1,6 +1,6 @@
 CC=gcc
 CFLAGS=$(pkg-config --cflags libsodium)  -Wall 
-LDFLAGS=$(pkg-config --libs libsodium) -lsodium
+LDFLAGS=$(pkg-config --libs libsodium) -lsodium -lpcap
 SYSTEM = qubie
 NFORMAL_BON_FILES = $(SYSTEM)-domain-model.bon
 STATIC_MODEL_FILES = $(SYSTEM)_static_model.bon

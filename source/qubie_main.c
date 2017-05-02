@@ -61,6 +61,14 @@ void FullTest(){
 	assert(false);
 };
 
+void __PcapTest(){
+	power_on_boot_and_run();
+	create_and_subscribe_bt_client();
+	pcap_test();
+	bt_communicator_update_qubie_state(STOPPED);
+	bt_communicator_update_qubie_state(POWERED_OFF);
+};
+
 //"Normal Test but with encrypted=false"
 //@design implemented by NormalTest and setting #define ENCRYPTED false
 void UnencryptedTest(){
@@ -72,6 +80,7 @@ int main(void){
 	printf("hello qubie\n\r");
 	//SmokeTest();
 	//SimpleTest();
-	NormalTest();
+	//NormalTest();
+	__PcapTest();
 	return 0;
 };

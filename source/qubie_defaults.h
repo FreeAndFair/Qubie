@@ -36,6 +36,12 @@
 
 // ====================================================================
 
+#define WIFI_TIMEOUT 5000 //5 seconds
+
+//@design a string to define a filter for the wifi device
+//unremark to activate the filter
+//#define WIFI_FILTER_STR ""
+
 /* channels 12 and 13 are not really in use in the us but they are added because they are used in other countries
  * and also in specific cases inside the usa. channel 14 (2484MHz) is omitted because it is not in use by cell phones
  * @TODO verify the channels are correct (current source is wikipedia)

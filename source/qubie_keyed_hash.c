@@ -12,16 +12,6 @@
 extern qubie_t the_qubie;
 static keyed_hash_t *self = &the_qubie.wifi_monitor.keyed_hash;
 
-//constructor
-keyed_hash_t make_keyed_hash(){
-	struct keyed_hash *keyed_hash_struct = malloc(sizeof(struct keyed_hash));
-	keyed_hash_struct->set=false;
-	//@ TODO key is set by wifi monitor but perhaps it should be done here:
-	//qubie_key_t *the_key = create_random_key();
-	//set_key(keyed_hash_struct, the_key);
-	return *keyed_hash_struct;
-};
-
 //helper functions
 
 //@requires num_bytes == the_binary.length
@@ -41,6 +31,15 @@ char * const __binToString(unsigned char * the_binary, const size_t num_bytes){
 	return (char * const)the_string;
 };
 
+//constructor
+keyed_hash_t make_keyed_hash(){
+	struct keyed_hash *keyed_hash_struct = malloc(sizeof(struct keyed_hash));
+	keyed_hash_struct->set=false;
+	//@ TODO key is set by wifi monitor but perhaps it should be done here:
+	//qubie_key_t *the_key = create_random_key();
+	//set_key(keyed_hash_struct, the_key);
+	return *keyed_hash_struct;
+};
 
 // ====================================================================
 // @bon QUERIES
