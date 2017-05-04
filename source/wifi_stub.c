@@ -1,6 +1,8 @@
 
 #include "qubie_t.h"
+#include "qubie.h"
 #include "qubie_wifi_monitor.h"
+#include "qubie_bt_client.h"
 #include "wifi_stub.h"
 #include <stdio.h>
 #include <pcap.h>
@@ -208,18 +210,35 @@ void qubie_pcap_close(){
 	pcap_close(handle);
 };
 
+
+/* @requires running()
+ * @TODO ensures wifi_monitor and bt_client are polled
+ * @ensures state > running;
+ */
+void __pcap_run_loop(){
+	unsigned long iterations = 0;
+	int pcap_ret = 0;
+	while (running() && !pcap_ret && iterations < MAX_TEST_ITERATIONS){
+		printf("DEBUG - iteration: %lu\n",iterations);
+		pcap_ret = qubie_pcap_get_packet();
+		poll_bt_client();
+		iterations++;
+	}
+};
+
+
+
 //design for testing purposes determine which test function to run
-int pcap_test(){
+void pcap_test(){
 	int Result;
 	//Result = qubie_pcap_init();
 	Result = qubie_pcap_init_from_file();
 	if(!Result) {
-		Result = qubie_pcap_get_packet();
+		//Result = qubie_pcap_get_packet();
+		__pcap_run_loop();
 		qubie_pcap_close();
 	}
-	return(Result);
 };
-
 
 
 //@TODO requires randoms_initiated

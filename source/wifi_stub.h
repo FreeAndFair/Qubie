@@ -7,4 +7,4 @@ void report_random_device();
 void update_monitored_frequency();
 
 //@TODO remove -- only for test purposes
-int pcap_test();
+void pcap_test();
