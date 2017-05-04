@@ -261,11 +261,12 @@ void record_observation( contact_record_t the_contact_record){
  */
 void run_loop(){
 	unsigned long iterations = 0;
-	while (running() && ++iterations < MAX_TEST_ITERATIONS){
+	while (running() && iterations < MAX_TEST_ITERATIONS){
 		printf("DEBUG - iteration: %lu\n",iterations);
 		report_random_device();
 		update_monitored_frequency();
 		poll_bt_client();
+		iterations++;
 	}
 };
 

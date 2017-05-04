@@ -15,13 +15,15 @@
 //default value for wifi monitor auto hopping state
 #define WIFI_AUTO_HOPPING_DEFAULT true
 
+#define PCAP_TEST_FILE "test.pcap"
+
 //@design unremark in order to test with a specific seed
 //#define RANDOM_SEED 1
 
 //@design all times listed in seconds but actual tests will be sped up 1000x
 //to avoid infinite loop set max number of run loop iterations before shutting down.
 //@design only relevant in test mode
-#define MAX_TEST_ITERATIONS 54000 //15 hours
+#define MAX_TEST_ITERATIONS 15*60*60 //15 hours
 //@design the amount of time to wait in each wifi sniffing interval
 #define WIFI_PAUSE_TIME 5 //5 seconds
 

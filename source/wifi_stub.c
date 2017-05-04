@@ -20,12 +20,16 @@ The name of Tim Carstens may not be used to endorse or promote products derived 
 /* Insert 'wh00t' for the BSD license here */
 
 //@TODO remove -- only for test purposes
-void __print_mac(char *title, const unsigned char *mac ){
+void __print_byte_array(char *title, const unsigned char *arr, const uint size ){
 	printf("DEBUG - %s: ", title);
-	for (int i=0; i< MAC_SIZE; ++i){
-		printf("%02X",mac[i]);
+	for (int i=0; i< size; ++i){
+		printf("%02X",arr[i]);
 	}
 	printf("\n");
+};
+
+void __print_mac(char *title, const unsigned char *mac){
+	__print_byte_array(title, mac, MAC_SIZE);
 };
 
 int __pcap_test1(){
@@ -105,6 +109,18 @@ int qubie_pcap_init(){
 	return(0);
 };
 
+int qubie_pcap_init_from_file(){
+	FILE * pcap_fp = fopen(PCAP_TEST_FILE, "r");
+	char errbuf[PCAP_ERRBUF_SIZE];	/* Error string */
+	handle = pcap_fopen_offline(pcap_fp, errbuf);
+
+	//enable monitor mode
+	pcap_set_rfmon(handle, 1);
+
+	return(0);
+};
+
+
 //@requires pcap_open
 int qubie_pcap_get_packet(){
 	/* Grab a packet */
@@ -113,6 +129,9 @@ int qubie_pcap_get_packet(){
 	struct pcap_pkthdr *header_ptr;
 	int res = pcap_next_ex(handle, &header_ptr, &packet);
 	int dlt; //datalink type
+	unsigned int rtap_len;
+	frequency_t the_frequency;
+	byte the_rssi;
 	printf("DEBUG - pcap_next_ex result: %d\n",res);
 	if (-1 == res ) {
 		printf("pcap_next_ex error: %s\n",pcap_geterr(handle));
@@ -121,17 +140,40 @@ int qubie_pcap_get_packet(){
 	//packet = pcap_next(handle, &header);
     if (0 == res) {
        printf("No packet found.\n");
-       return 2;
+       return(2);
    }
 	/* Print its length */
 	printf("Jacked a packet with length of [%d]\n", header.len);
 	dlt = pcap_datalink(handle);
+	if (dlt != 127) {	//rtap header
+		int msg_size = 100;
+		char msg[msg_size];
+		snprintf(msg, msg_size, "dlt = %d", dlt);
+		report_unsupported_packet((void *)msg);
+		return(2);
+	}
 	printf("DEBUG - dlt: %X\n", dlt);
 //	struct pcap_pkthdr {
 //		struct timeval ts; /* time stamp */
 //		bpf_u_int32 caplen; /* length of portion present */
 //		bpf_u_int32 len; /* length this packet (off wire) */
 //	};
+
+	//@TODO verify we need little endian
+	rtap_len = (uint)packet[3]<<8|(uint)packet[2];
+	printf("DEBUG - rtap length: %d\n", rtap_len);
+	__print_byte_array("rtap header", packet, rtap_len);
+	#define MIN_RTAP_LEN 18
+	if (rtap_len < MIN_RTAP_LEN) {
+		report_unsupported_packet((void *)"bad radiotap header length");
+		return(2);
+	}
+	//@design two bytes to represent the channel frequency (disregard flag data)
+	the_frequency = (uint)packet[rtap_len - 7]<<8|(uint)packet[rtap_len - 8];
+	the_rssi = packet[rtap_len - 4];
+
+	//move pointer to the beginning of the eth packet
+	packet = packet + rtap_len;
 
 	/* Ethernet addresses are 6 bytes */
 	#define ETHER_ADDR_LEN	6
@@ -152,7 +194,8 @@ int qubie_pcap_get_packet(){
 
 	//@TODO test in (wifi) monitor mode
 	//@design using static "0" rssi (rssi only valid in (wifi) monitor mode)
-	report_detected_device((unsigned char *)ethernet->ether_shost, 0, frequency());
+	//report_detected_device((unsigned char *)ethernet->ether_shost, 0, frequency());
+	report_detected_device((unsigned char *)ethernet->ether_shost, the_rssi, the_frequency);
 
 
 	return(0);
@@ -168,7 +211,8 @@ void qubie_pcap_close(){
 //design for testing purposes determine which test function to run
 int pcap_test(){
 	int Result;
-	Result = qubie_pcap_init();
+	//Result = qubie_pcap_init();
+	Result = qubie_pcap_init_from_file();
 	if(!Result) {
 		Result = qubie_pcap_get_packet();
 		qubie_pcap_close();

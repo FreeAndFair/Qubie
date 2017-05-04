@@ -67,8 +67,10 @@ void report_detected_device(
 		frequency_t the_frequency
 		);
 
-
-
+/* @requires message.length < MAX_MESSAGE_LEN - 100
+ * @ensures qubie.log.logged(WIFI_MONITOR_UNSUPPORTED_PACKET, message)
+ */
+void report_unsupported_packet(char * message);
 
 
 

@@ -132,8 +132,13 @@ void report_detected_device(
 	record_observation(the_contact_record);
 };
 
-
-
+/* @requires message.length < MAX_MESSAGE_LEN - 100
+ * @ensures qubie.log.logged(WIFI_MONITOR_UNSUPPORTED_PACKET, message)
+ */
+void report_unsupported_packet(char * message){
+	//@design message length should be less than (MAX_MESSAGE_LEN - 100) to avoid being truncated
+	add_log_entry(WIFI_MONITOR_UNSUPPORTED_PACKET, (void *)message);
+};
 
 
 

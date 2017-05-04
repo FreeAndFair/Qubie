@@ -20,7 +20,7 @@ void __write_log_entry_to_file( log_entry_t the_entry){
 
 //constructors
 char const *make_log_message(message_t message_type, void *message_val, qubie_time_t message_time){
-	int buff_size = 512;
+	int buff_size = MAX_MESSAGE_LEN;
 	char *buff = malloc(sizeof(char) * buff_size);
 	switch((int)message_type){
 	case QUBIE_STATE:
@@ -42,6 +42,9 @@ char const *make_log_message(message_t message_type, void *message_val, qubie_ti
 		break;
 	case WIFI_MONITOR_AUTO_HOPPING:
 		snprintf(buff, buff_size, "%lu wifi monitor auto hopping set to: %d",(unsigned long) message_time, (unsigned int)message_val);
+		break;
+	case WIFI_MONITOR_UNSUPPORTED_PACKET:
+		snprintf(buff, buff_size, "%lu wifi monitor detected unsupported packet: %s",(unsigned long) message_time, (char *)message_val);
 		break;
 	default:
 		//assert(false)

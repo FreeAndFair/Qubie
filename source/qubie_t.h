@@ -16,8 +16,12 @@ typedef enum {
 	WIFI_MONITOR_STATE,
 	WIFI_MONITOR_FREQUENCY,
 	WIFI_MONITOR_AUTO_HOPPING,
+	WIFI_MONITOR_UNSUPPORTED_PACKET,
 	MAX_MESSAGE_TYPES //@design this enum is the length of the array of all message types
 } message_t;
+
+typedef unsigned char byte;
+typedef unsigned int uint;
 
 //mac address is 48 bits (or 6 bytes) until we decide to support EUI-64
 #define MAC_SIZE 6
@@ -49,13 +53,13 @@ typedef unsigned int frequency_t;
 typedef unsigned char rssi_t;
 
 //only minimal usage of time is needed. it's enough to count seconds since the epoch
-typedef unsigned long qubie_time_t;
+typedef unsigned long qubie_time_t; //@TODO use time_t
 
 // a list of possible qubie states
 typedef enum {POWERED_ON, BOOTING, RUNNING, STOPPED, POWERED_OFF} state_t;
 
 typedef struct device_id {
-	bool encrypted;
+	bool encrypted; //@TBD is this field needed?
 	char const identifier_string[MAC_STRING_LEN];
 } device_id_t;
 
@@ -87,7 +91,7 @@ typedef struct qubie_logger {
 	FILE *log_fp;
 }qubie_logger_t;
 
-typedef void* hash_t; //@TODO
+//typedef void* hash_t; //@TODO
 typedef struct keyed_hash {
 	bool set;
 	qubie_key_t key;
