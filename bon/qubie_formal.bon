@@ -64,7 +64,7 @@ component
 			update_state	--mapping to allow external acces to change states
 				-> the_state : QUBIE_STATE
 				require
-					the_state member_of legal_update_state;
+					the_state member_of legal_update_states;
 				ensure
 					the_state = qubie.state;
 --					(the_state = booting) -> qubie.start_booting;
@@ -75,7 +75,7 @@ component
 				
 	    	legal_update_states : SET[QUBIE_STATE]
 	    		ensure
-	    			Result = {booting, running, stopped, powered_off};
+	    			Result = {booting, running, stopped, powered_off}; --TODO Reesult is a subset of...
 	    		end
 	    end
 
@@ -137,11 +137,11 @@ component
 		wifi_running : BOOLEAN
 		auto_hopping : BOOLEAN
 		keyed_hash : KEYED_HASH
-		frequency_range : SET[FREQUENCY]
+		frequency_range : SET[FREQUENCY] --TODO change to "channels" 
 		frequency : FREQUENCY
 		qubie : QUBIE
 		
-		boot_wifi
+		boot_wifi --TODO change to boot_monitor etc.
 			require 
 				not booted;
 			ensure
@@ -167,6 +167,8 @@ component
 			end
 		set_frequency 
 			-> the_frequency : FREQUENCY
+			require
+				the_frequency member_of frequency_range;
 			ensure 
 				delta {frequency, qubie.log};
 				frequency=the_frequency; 
@@ -181,12 +183,14 @@ component
 			end
 		report_detected_device
 			-> the_mac_address : VALUE
+			-> the_frequency : FREQUENCY --TODO add in source files
 			-> the_signal_strength : VALUE
 			ensure
 				delta {qubie.observations, qubie.log};
 				qubie.observations.contains(CONTACT_RECORD.make(keyed_hash, the_mac_address, the_signal_strength));
 				qubie.log.logged(Current);	
 			end
+		--TBD should we document unsupported packets?
 		--TODO the keyed hash is never changed after running
 	end
 	
@@ -202,7 +206,7 @@ end
 
 static_diagram QUBIE_COMMUNICATOR
 component
-	deferred class COMMUNICATOR
+	deferred class COMMUNICATOR 
 	inherit QUBIE_INTERFACE
 	feature
 		effective qubie : QUBIE
