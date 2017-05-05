@@ -46,6 +46,9 @@ char const *make_log_message(message_t message_type, void *message_val, qubie_ti
 	case WIFI_MONITOR_UNSUPPORTED_PACKET:
 		snprintf(buff, buff_size, "%lu wifi monitor detected unsupported packet: %s",(unsigned long) message_time, (char *)message_val);
 		break;
+	case ERROR_MESSAGE:
+		snprintf(buff, buff_size, "%lu ERROR: %s",(unsigned long) message_time, (char *)message_val);
+		break;
 	default:
 		//assert(false)
 		assert(false);

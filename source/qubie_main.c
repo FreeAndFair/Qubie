@@ -80,7 +80,7 @@ int main(void){
 	printf("hello qubie\n\r");
 	//SmokeTest();
 	//SimpleTest();
-	//NormalTest();
-	__PcapTest();
+	NormalTest();
+	//__PcapTest();
 	return 0;
 };

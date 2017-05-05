@@ -72,6 +72,9 @@ void report_detected_device(
  */
 void report_unsupported_packet(char * message);
 
-
+/*@ requires running
+ *
+ */
+void poll_wifi_monitor();
 
 

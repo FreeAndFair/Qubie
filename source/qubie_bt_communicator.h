@@ -68,7 +68,7 @@ void bt_communicator_publish_action( state_t the_state);
  */
 void bt_communicator_update_qubie_state( state_t the_state);
 
-
+void poll_bt_communicator();
 
 
 

@@ -122,7 +122,9 @@ void bt_communicator_update_qubie_state( state_t the_state){
 };
 
 
-
+void poll_bt_communicator(){
+	poll_bt_client();
+};
 
 
 

@@ -17,11 +17,17 @@ typedef enum {
 	WIFI_MONITOR_FREQUENCY,
 	WIFI_MONITOR_AUTO_HOPPING,
 	WIFI_MONITOR_UNSUPPORTED_PACKET,
+	ERROR_MESSAGE,
 	MAX_MESSAGE_TYPES //@design this enum is the length of the array of all message types
 } message_t;
 
 typedef unsigned char byte;
 typedef unsigned int uint;
+
+//minimum valid length of radiotap header
+#define MIN_RTAP_LEN 18
+//datalink filed value for packets with rtap headers
+#define RADIOTAP_DATALINK_VAL 127
 
 //mac address is 48 bits (or 6 bytes) until we decide to support EUI-64
 #define MAC_SIZE 6

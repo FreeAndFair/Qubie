@@ -30,38 +30,6 @@ void __print_byte_array(char *title, const unsigned char *arr, const uint size )
 	printf("\n");
 };
 
-void __print_mac(char *title, const unsigned char *mac){
-	__print_byte_array(title, mac, MAC_SIZE);
-};
-
-int __pcap_test1(){
-	//@assert(false)
-	char *dev, errbuf[PCAP_ERRBUF_SIZE];
-
-	dev = pcap_lookupdev(errbuf);
-	if (dev == NULL) {
-		fprintf(stderr, "Couldn't find default device: %s\n", errbuf);
-		return(2);
-	}
-	printf("Device: %s\n", dev);
-
-	//@defined moved to global
-	//pcap_t *handle;
-
-	handle = pcap_open_live(dev, BUFSIZ, 1, 1000, errbuf);
-	if (handle == NULL) {
-	 fprintf(stderr, "Couldn't open device %s: %s\n", dev, errbuf);
-	 return(2);
-	}
-	//@TBD this may be too strict at limiting to only one type of eth packets
-	if (pcap_datalink(handle) != DLT_EN10MB) {
-		fprintf(stderr, "Device %s doesn't provide Ethernet headers - not supported\n", dev);
-		return(2);
-	}
-
-
-	return(0);
-};
 
 /* @requires pcap_closed
  * @ensures pcap_open
@@ -165,7 +133,6 @@ int qubie_pcap_get_packet(){
 	rtap_len = (uint)packet[3]<<8|(uint)packet[2];
 	printf("DEBUG - rtap length: %d\n", rtap_len);
 	__print_byte_array("rtap header", packet, rtap_len);
-	#define MIN_RTAP_LEN 18
 	if (rtap_len < MIN_RTAP_LEN) {
 		report_unsupported_packet((void *)"bad radiotap header length");
 		return(2);
@@ -191,8 +158,8 @@ int qubie_pcap_get_packet(){
 	const struct sniff_ethernet *ethernet; /* The ethernet header */
 	ethernet = (struct sniff_ethernet*)(packet);
 
-	__print_mac("SMAC", ethernet->ether_shost);
-	__print_mac("DMAC", ethernet->ether_dhost);
+	__print_byte_array("SMAC", ethernet->ether_shost, MAC_SIZE);
+	__print_byte_array("DMAC", ethernet->ether_dhost, MAC_SIZE);
 
 	//@TODO test in (wifi) monitor mode
 	//@design using static "0" rssi (rssi only valid in (wifi) monitor mode)

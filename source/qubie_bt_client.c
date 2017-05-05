@@ -68,14 +68,25 @@ void create_and_subscribe_bt_client(){
 };
 
 void poll_bt_client(){
+	//@design chance determined in parts per 10000 (when in relevant state)
+	//TBD move these to defaults for better control
+	uint subscribe_chance = 5000;
+	uint unsubscribe_chance = 500;
+	uint stop_chance = 2;
+	uint power_off_chance = 1;
 
 	unsigned int rand_val = (rand() % 10000);
 	if(subscribed()){
-		if (rand_val <= 0) {
+		if (rand_val < unsubscribe_chance) {
+			unsubscribe();
+		} else if (rand_val < unsubscribe_chance + stop_chance){
 			bt_client_update_qubie_state(STOPPED);
+		} else if (rand_val < unsubscribe_chance + stop_chance + power_off_chance){
+			bt_client_update_qubie_state(POWERED_OFF);
 		};
-	};
-	//@TODO add additional functionality: subscribe/unsubscribe, power_off, etc.
+	} else if (rand_val <=subscribe_chance) { //not subscribed
+		subscribe(self);
+	}
 };
 
 

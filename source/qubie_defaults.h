@@ -15,6 +15,8 @@
 //default value for wifi monitor auto hopping state
 #define WIFI_AUTO_HOPPING_DEFAULT true
 
+//in test mode there is an option to read packets from a file instead of a live wifi interface
+//@design uncomment the below to read from file (test mode only)
 #define PCAP_TEST_FILE "test.pcap"
 
 //@design unremark in order to test with a specific seed
@@ -38,10 +40,12 @@
 
 // ====================================================================
 
+//@design time to wait while snifing packets on a given freq
 #define WIFI_TIMEOUT 5000 //5 seconds
-
+//@design max number of packets to intercept on a given freq in a given interval
+#define PACKET_COUNT_LIMIT 10 //10 packets
 //@design a string to define a filter for the wifi device
-//unremark to activate the filter
+//unremark and set string to activate the filter
 //#define WIFI_FILTER_STR ""
 
 /* channels 12 and 13 are not really in use in the us but they are added because they are used in other countries
