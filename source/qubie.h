@@ -13,6 +13,9 @@ qubie_t *make_qubie();
 // ====================================================================
 
 // qubie status
+/*@ ensures \result == the_qubie.state;
+ * 	assigns \nothing;
+ */
 state_t state();
 
 // pointer to qubie's log, a list of log entries with some added functionality
@@ -28,7 +31,10 @@ bt_communicator_t *bt_communicator();
 //@ ensures {stopped, powered_off} == Result
 const state_t* qubie_legal_update_states();
 
-//@ensures log.empty() and observations.empty()
+/*@ ensures log_empty();
+ * 	ensures observations_empty();
+ *
+ */
 bool initialized();
 
 /*

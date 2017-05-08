@@ -62,7 +62,10 @@ typedef unsigned char rssi_t;
 typedef unsigned long qubie_time_t; //@TODO use time_t
 
 // a list of possible qubie states
-typedef enum {POWERED_ON, BOOTING, RUNNING, STOPPED, POWERED_OFF} state_t;
+//@ design the order of the states is important.
+// with the exception of POWER_OFF which is a final state and can occur from any other state
+// each state moves to the next state in order
+typedef enum {START, POWERED_ON, BOOTING, RUNNING, STOPPED, POWERED_OFF} state_t;
 
 typedef struct device_id {
 	bool encrypted; //@TBD is this field needed?

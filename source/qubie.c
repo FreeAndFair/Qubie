@@ -14,9 +14,8 @@
 #include <string.h>
 
 //globals
-//static const state_t legal_update_states[] = {RUNNING, STOPPED, POWERED_OFF};
-//@design must be synced to typedef enum {POWERED_ON, BOOTING, RUNNING, STOPPED, POWERED_OFF} state_t;
-const char *state_strings[] = {"powered on", "booting", "running", "stopped", "powered off"};
+//@design must be synced to typedef enum {START, POWERED_ON, BOOTING, RUNNING, STOPPED, POWERED_OFF} state_t;
+static const char *state_strings[] = {"start", "powered on", "booting", "running", "stopped", "powered off"};
 
 qubie_t the_qubie = {
 		.observations = {
@@ -48,7 +47,8 @@ qubie_t the_qubie = {
 
 //helper functions
 
-/*@ ensures (state == new_state);
+/*@ requires initialized;
+ * 	ensures (the_state == new_state);
  *  ensures action_published(new_state);
  */
 void __set_and_publish( state_t new_state){
@@ -58,9 +58,9 @@ void __set_and_publish( state_t new_state){
 
 //@ensures initialized
 void __initialize_qubie(){
-	//@init the log
+	//init the log
 	the_qubie.log.log_fp = fopen("qubie_log.txt","w");
-	//@init observations
+	//init observations
 	the_qubie.observations.observations_fp = fopen("qubie_observations.csv", "w");
 	fprintf(the_qubie.observations.observations_fp, "device,time,rssi,frequency\n");
 	fflush(the_qubie.observations.observations_fp);

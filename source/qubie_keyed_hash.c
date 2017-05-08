@@ -14,8 +14,11 @@ static keyed_hash_t *self = &the_qubie.wifi_monitor.keyed_hash;
 
 //helper functions
 
-//@requires num_bytes == the_binary.length
 //@TODO ensures Result is an exact string representation of the binary
+/*@ requires \valid_read(the_binary + (0 .. num_bytes));
+ * 	ensures \valid_read(\result + (0 .. num_bytes * 2 +1));
+ * 	assigns \nothing;
+ */
 char * const __binToString(unsigned char * the_binary, const size_t num_bytes){
 	const size_t string_max_length = num_bytes * 2 +1;
 	char * the_string = (char *)malloc(string_max_length);
@@ -44,18 +47,23 @@ keyed_hash_t make_keyed_hash(){
 // ====================================================================
 // @bon QUERIES
 // ====================================================================
-
-//@ ensures write-once
+//@TODO ensures write-once
+/*@ ensures \result == self->set;
+ * 	assigns \nothing;
+ */
 bool set(){
 	return self->set;
 };
 
-const qubie_key_t *key(){;
-	return &self->key;
-};
+// only for contract purposes
+//const qubie_key_t *key(){;
+//	return &self->key;
+//};
 
-/*@ requires set
- * 	ensures hash.hash(the_string) == Result;
+//@TODO ensures hash.hash(the_string) == Result;
+/*@ requires self->set;
+ * 	ensures \valid_read(\result + (0 .. MAC_STRING_LEN);
+ * 	assigns \nothing;
  */
 char const *hashed_string( bool encrypted, mac_t the_string){
 	unsigned char *mac_buf;
@@ -73,6 +81,10 @@ char const *hashed_string( bool encrypted, mac_t the_string){
 };
 
 //implemetned with libsodium
+/*@ requires true;
+ * 	ensures \valid_read(\result (0 .. KEY_SIZE));
+ * 	assigns \nothing;
+ */
 qubie_key_t *create_random_key(){
 	unsigned char sodium_init_ret = sodium_init();
 	printf("DEBUG - sodium_init return val: %d\n", sodium_init_ret);
@@ -88,9 +100,10 @@ qubie_key_t *create_random_key(){
 // @bon COMMANDS
 // ====================================================================
 
-/*@ requires !set
- * 	ensures key == the_key;
- * 	ensures set
+/*@ requires !self->set;
+ * 	ensures self->key == the_key;
+ * 	ensures self->set;
+ * 	assigns self->key, self->set;
  */
 //@ delta {set, hash, key};
 void set_key( qubie_key_t *the_key){

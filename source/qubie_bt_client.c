@@ -67,6 +67,7 @@ void create_and_subscribe_bt_client(){
 	subscribe(the_bt_client);
 };
 
+
 void poll_bt_client(){
 	//@design chance determined in parts per 10000 (when in relevant state)
 	//TBD move these to defaults for better control

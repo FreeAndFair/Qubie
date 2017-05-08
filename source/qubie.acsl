@@ -1,0 +1,77 @@
+// The ACSL specification of the Qubie
+
+#include "qubie_t.h"
+#include <stdbool.h>
+
+
+#ifndef QUBIE_ACSL
+
+#define QUBIE_ACSL
+
+
+#define MAX_OBSERVATIONS_SIZE INT_MAX;
+//@design booted and stopped are in essence the same so no "stopped" state is needed
+typedef enum {START, BOOTED, RUNNING} monitor_state_t;
+
+/*@ axiomatic Qubie {
+
+  	logic state_t the_qubie_state;
+	logic monitor_state_t the_monitor_state;
+
+	//@design logically structure observations as an array(even if it is implemented as a file)
+	//TODO is this a good way to do this?
+	logic contract_record_t observations_array[MAX_OBSERVATIONS_SIZE];
+	//TODO make this predicate global to deal with log_array as well
+	predicate observations_array_initialized: \forall int i: 0<= i < MAX_OBSERVATIONS_SIZE ==> observations_array[i] == \null;
+	global invariant observations_array_initialized_at_init: \at(observations_array_initialized,Init);
+
+	// @design in order to init pseudo random test seeds an init function must be called.
+	logic bool randoms_initiated;
+	global invariant randoms_not_initiated_at_start: \at(!randoms_initiated, Init);
+
+	// @design initialization needed in order to begin other parts of the boot stage
+	logic_bool initialized;
+
+	//@design: use these variables to implement the logic of the publish/published and log/logged contracts
+	logic contact_record_t the_last_contact_record;
+	logic log_entry_t the_last_contact_record;
+
+	//@design keep logical copy of bt_client state to verify the state
+	logic state_t bt_client_qubie_state;
+	logic bool bt_client_subscribed;
+	global invariant subscribed_bt_client_shows_qubie_state: bt_client_subscribed ==> (bt_client_qubie_state == the_qubie_state);
+
+
+
+
+*/
+
+
+//@ TODO does this need to be defined here? "Once a Qubie is stopped, it cannot be restarted." --TODO? should it be allowed to restart using a new set of log, observations, etc.
+
+//@ TODO does this need to be defined here? "The keyed hash is never changed after the WiFi monitor starts running.",
+
+
+
+
+
+//@ global invariant system_starts_in_the_start_state: \at(the_qubie_state == START, Init);
+//@ global invariant monitor_starts_in_the_start_state: \at(the_monitor_state == START, Init);
+//@ global invariant bt_communicator_starts_unsubscribed: \at(subscribed() == false, Init);
+//@ global invariant keyed_hash_starts_unset: \at(set() == false, Init);
+//@ global invariant log_starts_empty: \at(log_empty() == true, Init);
+//@ global invariant observations_starts_empty: \at(observations_empty() == true, Init);
+
+/*@ global invariant the_qubie_state_is_legal: the_qubie_state == START
+												^^ the_qubie_state == POWERED_ON
+												^^ the_qubie_state == BOOTED
+												^^ the_qubie_state == RUNNING
+												^^ the_qubie_state == STPPED
+												^^ the_qubie_state == POWERED_OFF;
+*/
+
+
+
+
+
+#endif

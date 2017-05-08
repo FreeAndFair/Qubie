@@ -18,11 +18,11 @@ extern qubie_t the_qubie;
 static qubie_observations_t *self = &the_qubie.observations;
 
 //helper functions
-/*@ ensures observations_contains(the_contact_record);
- */
 //@design format: device,time,rssi,frequency
+/*@ ensures the_last_contact_record == the_contact_record;
+ * 	assigns *self->observations_fp;
+ */
 void __write_contact_record_to_file( contact_record_t the_contact_record){
-	//@TBD do I need to implement according to binary files?
 	fprintf(self->observations_fp, "%s,%lu,%d,%d\n",
 			the_contact_record.device_id.identifier_string,
 			the_contact_record.contact_time,
@@ -45,6 +45,13 @@ qubie_observations_t make_qubie_observations(const char *filename){
 	return *observations_struct;
 };
 
+/*@ requires true;
+ * 	ensures \result.device_id == device_id;
+ * 	ensures \result.contact_time == contact_time;
+ * 	ensures \result.rssi == rssi;
+ * 	ensures \result.frequency == frequency;
+ * 	assigns \nothing;
+ */
 contact_record_t make_contact_record( device_id_t const device_id,
 								qubie_time_t const contact_time,
 								const rssi_t rssi,
@@ -59,7 +66,11 @@ contact_record_t make_contact_record( device_id_t const device_id,
 	*(frequency_t *)&contact_record_struct->frequency = frequency;
 	return *contact_record_struct;
 };
-
+/*@
+ * requires !ENCRYPTED_DEFAULT ==> TEST_MODE
+ *	//TODO ensures identifier_string is created from raw_identifier
+ *	assigns \nothing
+ */
 device_id_t make_device_id(mac_t raw_identifier){
 	device_id_t *device_id_struct = malloc(sizeof(struct device_id));
 	char const * identifier_string;
@@ -72,47 +83,43 @@ device_id_t make_device_id(mac_t raw_identifier){
 	return *device_id_struct;
 };
 
-//destructors
-//@TODO is this needed?
-/*
-void free_contact_record(contact_record_t the_contact_record){
-	printf("DEBUG - freeing contact record\n");
-	free(&the_contact_record);
-};
-*/
+
+
 // ====================================================================
 // @bon QUERIES
 // ====================================================================
 
-//@ ensures (0 == size) == Result
+/*@ ensures (0 == self->size) == \result;
+ * 	ensures \forall int i; 0<= i < MAX_OBSERVATIONS_SIZE ==> !\valid(observations_array[i]);
+ * 	assigns \nothing;
+ */
 bool observations_empty(){
 	//assumes linked list format
 	return 0 == self->size;
 };
 
-/*
-//@design helper function to compare contact records for the sake of checking existence
-bool contact_records_match(contact_record_t *cr1, contact_record_t *cr2){
-	//return false if the contact records are not well formed
-	//@design each contact record is only created once so it is enough to compare the addresses
-	return  cr1 == cr2;
-};
-*/
 
-/*@ensures the_contact_record in observations
- *@design this function is never used. it is only to fulfill a contract.
+//@design this function is never used. it is only to fulfill a contract.
+/*@
+ * 	ensures \result == (\exists int i; 0<= i <= size - 1 && \valid(observations_array[i]) && observations_array[i] == the_contact_record);
+ * 	ensures \result == the_last_contact_record;
+ * 	assigns \nothing;
+ *
  */
 bool observations_contains( contact_record_t the_contact_record){
 	//@assert(false)
 	assert(false);
-	return false;
+	return(false);
 };
 
 
 
 
-/*@ ensures old size + 1 == size;
- * 	ensures observations_contains(the_contact_record);
+/*@ requires self->size +1 < MAX_OBSERVATIONS_SIZE;
+ * 	ensures \old(self->size) + 1 == self->size;
+ * 	ensures observations_array[self->size] == the_contact_record;
+ * 	ensures the_last_contact_record == the_contact_record;
+ * 	assigns the_last_contact_record, observations_array[self->size];
  */
 void add_contact_record( contact_record_t the_contact_record){
 	//free_contact_record(self.last);

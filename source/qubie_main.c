@@ -13,10 +13,10 @@ extern qubie_t the_qubie;
 extern bt_client_t the_bt_client;
 
 //helper functions
-/* @TODO requires !randoms_initiated
- * @TODO ensures randoms_initiated
- * @design to init pseudo random test seeds.
- * @design does not effect hash key. NOT SECURE FOR HASH KEY SEEDS!!!
+// @design to init pseudo random test seeds.
+// @design does not effect hash key. NOT SECURE FOR HASH KEY SEEDS!!!
+/*@	requires !randoms_initiated
+ * ensures randoms_initiated
  */
 void init_random_number_generator(){
 	unsigned long seed;
@@ -31,6 +31,7 @@ void init_random_number_generator(){
 
 
 //"Power On, Boot Qubie, Start Qubie, Power Off"
+// @scenario
 void SmokeTest(){
 	power_on_boot_and_run();
 	power_off();
@@ -46,6 +47,7 @@ void SimpleTest(){
 };
 
 //"Power On, Boot Qubie, Start Qubie, Subscribe Bluetooth Client, Detect Devices, Change Frequency, Bluetooth Client Command to Stop, Bluetooth Client Command to Power Off, Power Off"
+// @scenario
 void NormalTest(){
 	init_random_number_generator();
 	power_on_boot_and_run();
@@ -56,8 +58,9 @@ void NormalTest(){
 
 //TBD --include multiple subscribe/unsubscribe and multiple options of detecting devices on differnt frequencies
 //@TODO
+// @scenario
 void FullTest(){
-	//@assert(false)
+	//@assert(false);
 	assert(false);
 };
 
@@ -71,8 +74,9 @@ void __PcapTest(){
 
 //"Normal Test but with encrypted=false"
 //@design implemented by NormalTest and setting #define ENCRYPTED false
+// @scenario
 void UnencryptedTest(){
-	//@assert(false)
+	//@assert(false);
 	assert(false);
 };
 

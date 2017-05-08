@@ -15,9 +15,6 @@ static bt_communicator_t *self = &the_qubie.bt_communicator;
 //@design for export to bt_client which does not have direct access to the_qubie
 bt_communicator_t *the_communicator = &the_qubie.bt_communicator;
 
-
-//@TODO remove static const state_t bt_communicator_legal_update_states[2] = {STOPPED, POWERED_OFF};
-
 //constructor
 bt_communicator_t *make_bt_communicator(qubie_t *qubie){
 	bt_communicator_t *bt_communicator_struct = malloc(sizeof(struct bt_communicator));
@@ -38,7 +35,9 @@ bt_communicator_t *make_bt_communicator(qubie_t *qubie){
  */
 
 // qubie status
-//@ ensures Result == qubie.state
+/*@ ensures \result == the_state
+ * 	assigns \nothing
+ */
 state_t bt_communicator_qubie_state(){
 	return state();
 };
@@ -47,20 +46,32 @@ state_t bt_communicator_qubie_state(){
 // moved to central location: qubie_t qubie();
 
 // pointer to qubie's log, a list of log entries with some added functionality
+/*@	ensures \result == &the_qubie.log;
+ * 	assigns \nothing;
+ *
+ */
 qubie_logger_t *get_qubie_log(){
 	return get_log();
 };
 
+/*@ ensures \result == self->subscribed;
+ * ensures \result == bt_client_subscribed;
+ * 	assigns \nothing
+ */
 bool subscribed(){
 	return self->subscribed;
 };
-//@ requires subscribed
+/*@ requires self->subscribed
+ * 	ensures \result == self->bt_client;
+ * 	assigns \nothing;
+ */
 bt_client_t *bt_client(){
 	return self->bt_client;
 };
 
-/*@ ensure !subscribed or bt_client.published(the_state);
- *
+/*@
+ * 	ensures !self->subscribed or bt_client_qubie_state == \result;
+ *	assigns \nothing
  */
 bool bt_communicator_action_published( state_t the_state){
 	bool Result = false;
@@ -72,7 +83,7 @@ bool bt_communicator_action_published( state_t the_state){
 	return Result;
 };
 
-/*@ ensures {stopped, powered_off} == Result;
+/*@ ensures {STOPPED, POWERED_OFF} == \result;
  */
 const state_t *get_bt_communicator_legal_update_states(){
 	return self->legal_update_states;
@@ -87,9 +98,11 @@ const state_t *get_bt_communicator_legal_update_states(){
  * are therefore left out
  */
 
-/*@ requires !subscribed
- * 	ensures bt_client==the_bluetooth_client;
- * 	ensures subscribed;
+/*@ requires !self->subscribed;
+ * 	ensures self->bt_client==the_bluetooth_client;
+ * 	ensures self->subscribed;
+ * 	ensures bt_client_subscribed;
+ * 	assigns self->subscribed, self->bt_client, bt_client_subscribed;
  */
 //@ delta {bt_client, subscribed};
 void subscribe( bt_client_t *the_bluetooth_client){
@@ -97,16 +110,18 @@ void subscribe( bt_client_t *the_bluetooth_client){
 	self->subscribed = true;
 };
 
-/*@ requires subscribed
- * 	ensures !subscribed;
+/*@ requires self->subscribed;
+ * 	ensures !self->subscribed;
+ * 	ensures !bt_client_subscribed;
+ * 	assigns self->subscribed, bt_client_subscribed;
  */
-//@ delta {bt_client, subscribed};
 void unsubscribe(){
 	self->bt_client = NULL;
 	self->subscribed = false;
 };
 
-/*@ ensures !subscribed || bt_client.published(the_state)
+/*@ ensures !bt_client_subscribed || bt_client_qubie_state == the_state;
+ * 	assigns the_qubie_state, bt_client_qubie_state;
  */
 void bt_communicator_publish_action( state_t the_state){
 	if (self->subscribed) {
@@ -114,14 +129,20 @@ void bt_communicator_publish_action( state_t the_state){
 	};
 };
 
-/*@ requires the_state in bt_communicator_legal_update_states;
- * 	ensures the_state == qubie.state;
+/*@ requires the_state == STOPPED ^^ the_state == POWERED_OFF; //design: legal states
+ * 	ensures the_state == the_qubie.state;
+ * 	ensures the_state == the_qubie_state;
+ * 	assigns the_qubie.state, the_qubie_state;
  */
 void bt_communicator_update_qubie_state( state_t the_state){
 	update_state( the_state);
 };
 
-
+//@design allow bt_client to do whatever is in it's spec.
+/*@
+ * 	assigns bt_client_subscribed, bt_client_qubie_state, the_qubie_state,
+ * 			self->subscribed, self->bt_client, the_qubie.state
+ */
 void poll_bt_communicator(){
 	poll_bt_client();
 };

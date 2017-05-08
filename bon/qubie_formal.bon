@@ -5,7 +5,7 @@ component
 	    class QUBIE_STATE
 	    inherit VALUE
 	    invariant
-	      Current member_of {powered_on, booting, running, stopped, powered_off}
+	      Current member_of {start, powered_on, booting, running, stopped, powered_off}
 	    end
 	    deferred class QUBIE_INTERFACE
 	    feature
@@ -233,7 +233,7 @@ component
 			-> the_state : QUBIE_STATE
 			ensure
 				--publish to all existing clients;
-				subscribed -> bt_client.received(the_state);
+				subscribed -> bt_client.published(the_state);
 			end
 		subscribe
 			-> the_bluetooth_client : BLUETOOTH_CLIENT

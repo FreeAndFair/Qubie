@@ -208,7 +208,7 @@ void pcap_test(){
 };
 
 
-//@TODO requires randoms_initiated
+//@	requires randoms_initiated
 void report_random_device(){
 	//@assert(TEST_MODE)
 	assert(TEST_MODE);

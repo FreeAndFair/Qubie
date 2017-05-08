@@ -70,7 +70,7 @@ void __open_wifi_interface() {
 /*@ requires !\valid(handle)
  * 	ensures \valid(handle)
  * 	assigns handle
- * 	TODO enables monitor_mode
+ * 	ensures monitor_mode_enabled
  */
 void __boot_wifi_interface(){
 #ifdef PCAP_TEST_FILE
@@ -84,7 +84,7 @@ void __boot_wifi_interface(){
 };
 
 /*@ requires wifi_interface_polled
- *	ensures Result implies \valid(current_packet)
+ *	ensures \result implies \valid(current_packet)
  */
 bool __packet_ready() {
 	return current_packet != NULL;
@@ -148,6 +148,7 @@ void __get_packet(){
 
 /*@	requires __good_packet()
  * 	ensures !__packet_ready()
+ * 	ensures !wifi_interface_polled
  * 	TODO ensures observations.contains(packet)
  */
 void __process_packet() {
@@ -240,10 +241,12 @@ void start_wifi(){
 
 /*@ requires running
  * 	ensures !running
+ * 	ensures !\valid(handle)
  * 	ensures qubie.log.logged(WIFI_MONITOR_STATE, "stopped")
  */
 void stop_wifi(){
 	//@TODO stop actual wifi device
+	pcap_close(handle);
 	add_log_entry(WIFI_MONITOR_STATE, (void *)"stopped");
 	self->wifi_running = false;
 };
