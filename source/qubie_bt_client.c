@@ -13,6 +13,10 @@ static bt_client_t *self = &the_bt_client;
 //helper functions
 
 //constructor
+/*@	ensures \result.bt_communicator == bt_communicator;
+ * 	ensures \result.qubie_state == the_qubie_state;
+ * 	assigns self, the_bt_client;
+ */
 bt_client_t *make_bt_client(bt_communicator_t *bt_communicator){
 	/*
 	bt_client_t *bt_client_struct = malloc(sizeof(struct bt_client));
@@ -31,43 +35,57 @@ bt_client_t *make_bt_client(bt_communicator_t *bt_communicator){
 // ====================================================================
 
 //long name to ensure it is not confused with qubie's method
+/*@ requires true;
+ * \result == &self->bt_communicator;
+ * assigns \nothing;
+ */
 bt_communicator_t *bt_client_communicator(){
 	return self->bt_communicator;
 };
 
 //ack that a qubie state update has been received
+/*@
+ * 	requires true;
+ * 	ensures \result == (the_qubie_state == bt_client_qubie_state);
+ * 	assigns \nothing;
+ */
 bool published( state_t the_state){
-	//@TODO? how to deal with quick state changes. is it enough to check the current state?
 	return self->qubie_state == the_state;
 };
 
 // ====================================================================
 // @bon COMMANDS
 // ====================================================================
-/*@ ensures published(the_state);
- *  TODO ensures delta Current
+/*@ ensures the_qubie_state == bt_client_qubie_state;
+ *	assigns bt_client_qubie_state;
  */
 void publish_from_bt_communicator( state_t the_state){
 	self->qubie_state = the_state;
 };
 
-/*@ TODO requires the_state in legal_update_states
- * 	ensures published(the_state)
- *	ensures the_state == qubie.state
+/*@ requires the_state == STOPPED ^^ the_state == POWERED_OFF; //design: legal states
+ * 	ensures the_state == the_qubie.state;
+ * 	ensures the_state == the_qubie_state;
+ * 	assigns the_qubie.state, the_qubie_state;
  */
 void bt_client_update_qubie_state( state_t the_state){
 	bt_communicator_update_qubie_state(the_state);
 };
 
-/*@ requires !subscribed()
- *@ ensures subscribed()
+/*@ requires !bt_client_subscribed;
+ *	ensures bt_client_subscribed;
+ *	assigns  bt_client_subscribed, the_bt_client, self, self->bt_communicator->subscribed;
  */
 void create_and_subscribe_bt_client(){
 	bt_client_t *the_bt_client = make_bt_client(bt_client_communicator());
 	subscribe(the_bt_client);
 };
 
-
+//@design allow bt_client to do whatever is in it's spec.
+/*@
+ * 	assigns bt_client_subscribed, bt_client_qubie_state, the_qubie_state,
+ * 			self->subscribed, self->bt_client, the_qubie.state
+ */
 void poll_bt_client(){
 	//@design chance determined in parts per 10000 (when in relevant state)
 	//TBD move these to defaults for better control

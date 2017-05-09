@@ -104,7 +104,6 @@ const state_t *get_bt_communicator_legal_update_states(){
  * 	ensures bt_client_subscribed;
  * 	assigns self->subscribed, self->bt_client, bt_client_subscribed;
  */
-//@ delta {bt_client, subscribed};
 void subscribe( bt_client_t *the_bluetooth_client){
 	self->bt_client = the_bluetooth_client;
 	self->subscribed = true;
