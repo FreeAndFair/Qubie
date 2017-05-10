@@ -21,7 +21,7 @@ extern bt_client_t the_bt_client;
 
   	logic state_t the_qubie_state;
 	logic monitor_state_t the_logical_wifi_monitor_state;
-	logic bool initialized;
+	logic bool logical_initialized;
 
 	//@design logically structure observations as an array (even if it is implemented as a file)
 	//logic contract_record_t observations_array[MAX_LOGIC_SIZE];
@@ -32,12 +32,12 @@ extern bt_client_t the_bt_client;
 	logic bool randoms_initiated;
 
 	// @design initialization needed in order to begin other parts of the boot stage
-	logic bool initialized;
+
 
 	//@design: use these variables to implement the logic of the publish/published and log/logged contracts
 	logic contact_record_t the_last_contact_record;
 	logic message_t the_last_log_entry_message_type;
-	logic void   the_last_log_entry_message_val;
+	logic void  * the_last_log_entry_message_val;
 
 	//@design keep logical copy of bt_client state to verify the state
 	logic bool bt_communicator_polled;
@@ -87,7 +87,7 @@ extern bt_client_t the_bt_client;
 
 
 //@ global invariant system_starts_in_the_start_state: \at(the_qubie_state == START, Init);
-//@ global invariant monitor_starts_in_the_start_state: \at(the_monitor_state == START, Init);
+//@ global invariant monitor_starts_in_the_start_state: \at(the_logical_wifi_monitor_state == MONITOR_START, Init);
 //@ global invariant bt_communicator_starts_unsubscribed: \at(bt_client_subscribed == false, Init);
 //@ global invariant keyed_hash_starts_unset: \at(the_qubie.wifi_monitor.keyed_hash.set == false, Init);
 //@ global invariant log_starts_empty: \at(the_qubie.log.size == 0, Init);
@@ -95,14 +95,14 @@ extern bt_client_t the_bt_client;
 
 /*@ global invariant the_qubie_state_is_legal: the_qubie_state == START
 												^^ the_qubie_state == POWERED_ON
-												^^ the_qubie_state == BOOTED
+												^^ the_qubie_state == BOOTING
 												^^ the_qubie_state == RUNNING
-												^^ the_qubie_state == STPPED
+												^^ the_qubie_state == STOPPED
 												^^ the_qubie_state == POWERED_OFF;
 */
 
 /*@ global invariant the_wifi_monitor_state_is_legal: the_logical_wifi_monitor_state == MONITOR_START
-												^^ the_logical_wifi_monitor_state == MONITOR_BOOTING
+												^^ the_logical_wifi_monitor_state == MONITOR_BOOTED
 												^^ the_logical_wifi_monitor_state == MONITOR_RUNNING;
 */
 

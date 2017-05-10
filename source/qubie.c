@@ -1,6 +1,7 @@
 //qubie module implementation summary
 
 #include "qubie_t.h"
+#include "qubie.acsl"
 #include "qubie.h"
 #include "qubie_bt_communicator.h"
 #include "qubie_log.h"
@@ -20,7 +21,7 @@ static const char *state_strings[] = {"start", "powered on", "booting", "running
 qubie_t the_qubie = {
 		.observations = {
 				.size = 0,
-				.observations_fp = NULL //fopen("qubie_observations.csv", "w") //@TODO init file with header
+				.observations_fp = NULL //fopen("qubie_observations.csv", "w")// TODO init file with header
 		},
 		.log = {   //make_qubie_logger("qubie_log.txt"),
 				.size = 0,
@@ -47,11 +48,11 @@ qubie_t the_qubie = {
 
 //helper functions
 
-/*@ requires initialized;
+/*@ requires logical_initialized;
    	ensures (the_qubie_state == new_state);
-   	ensures logical_logged(new_state);
+   	ensures logical_logged(QUBIE_STATE, state_strings[new_state]);
     ensures logical_published(new_state);
-    assigns the_qubie_state, the_qubie.log, bt_client_qubie_state;
+    assigns the_qubie.log;
  */
 void __set_and_publish( state_t new_state){
 	the_qubie.state=new_state;
@@ -59,9 +60,9 @@ void __set_and_publish( state_t new_state){
 };
 
 /*@
-   requires !initialized;
-   ensures initialized;
-   assigns initialized;
+   requires !logical_initialized;
+   ensures logical_initialized;
+   assigns \nothing;
  */
 void __initialize_qubie(){
 	//init the log
@@ -82,7 +83,7 @@ qubie_t *make_qubie(){
 	qubie_struct->state = POWERED_ON;
 	qubie_struct->log = make_qubie_logger("qubie_log.txt");
 	memcpy((qubie_observations_t *)&qubie_struct->observations, &observations, sizeof(struct observations));
-	//free(&observations); //@TODO is this freed automatically when the function exists?
+	//free(&observations);// TODO is this freed automatically when the function exists?
 	qubie_struct->wifi_monitor = make_wifi_monitor(qubie_struct);
 	qubie_struct->bt_communicator = make_bt_communicator(qubie_struct);
 	qubie_struct->legal_update_states = legal_update_states;
@@ -91,7 +92,7 @@ qubie_t *make_qubie(){
 	return &the_qubie;
 };
 
-//@ TODO define predicates in acsl file
+//TODO define predicates in acsl file
 
 // ====================================================================
 // @bon QUERIES
@@ -112,14 +113,14 @@ qubie_observations_t *observations(){
 };
 // pointer to wifi monitor
 wifi_monitor_t *wifi_monitor(){
-	return &the_qubie.wifi_monitor;
+	return(&the_qubie.wifi_monitor);
 };
 // pointer to bluetooth communicator
 bt_communicator_t *bt_communicator(){
 	return &the_qubie.bt_communicator;
 };
 
-/*@ ensures {STOPPED, POWERED_OFF} == \result;
+/*@ ensures the_qubie.legal_update_states == \result;
    	assigns \nothing;
  */
 const state_t *qubie_legal_update_states(){
@@ -127,7 +128,7 @@ const state_t *qubie_legal_update_states(){
 };
 
 /*@	ensures the_qubie.log.size == 0 &&  the_qubie.observations.size == 0;
-   	ensures \result == initialized;
+   	ensures \result == logical_initialized;
    	assigns \nothing;
  */
 bool initialized(){
@@ -169,11 +170,11 @@ bool powered_off(){
 };
 
 //design this should not be called it is only for the purpose of defining a contract
-/*@ ensures logical_publish(the_state);
+/*@ ensures logical_published(the_state);
    	assigns \nothing;
  */
 bool action_published( state_t the_state){
-	//@assert(false)
+	//@assert(false);
 	assert(false);
 	return logged(QUBIE_STATE , (void *)state_strings[the_state]) &&
 			bt_communicator_action_published( the_state);
@@ -187,8 +188,8 @@ bool action_published( state_t the_state){
 
 /*@	requires the_qubie_state == START;
     ensures (the_qubie_state == POWERED_ON);
-    ensures logical_published(state);
-    assigns the_qubie_state;
+    ensures logical_published(POWERED_ON);
+    assigns \nothing;
  */
 void power_on(){
 	__initialize_qubie();
@@ -197,8 +198,8 @@ void power_on(){
 
 /*@ requires (the_qubie_state == POWERED_ON);
     ensures (the_qubie_state == BOOTING);
-    ensures logical_published(state);
-    assigns the_qubie_state;
+    ensures logical_published(BOOTING);
+    assigns \nothing;
  */
 void start_booting(){
 	boot_wifi();
@@ -208,8 +209,8 @@ void start_booting(){
 
 /*@ requires (the_qubie_state == BOOTING);
     ensures (the_qubie_state == RUNNING);
-    ensures logical_published(state);
-    assigns the_qubie_state;
+    ensures logical_published(RUNNING);
+    assigns \nothing;
  */
 void start_running(){
 	start_wifi();
@@ -218,8 +219,8 @@ void start_running(){
 
 /*@ requires (the_qubie_state == RUNNING);
     ensures (the_qubie_state == STOPPED);
-    ensures logical_published(state);
-    assigns the_qubie_state;
+    ensures logical_published(STOPPED);
+    assigns \nothing;
  */
 void stop_running(){
 	stop_wifi();
@@ -228,12 +229,12 @@ void stop_running(){
 
 /*@ requires the_qubie_state != POWERED_OFF;
    	ensures (the_qubie_state == POWERED_OFF);
-    ensures logical_published(state);
-    assigns the_qubie_state;
+    ensures logical_published(POWERED_OFF);
+    assigns \nothing;
  */
 void power_off(){
 	__set_and_publish(POWERED_OFF);
-	//@TBD move cleanup code to the relevant modules.
+	//TBD move cleanup code to the relevant modules.
 	if(the_qubie.log.log_fp) {
 		fclose(the_qubie.log.log_fp);
 	}
@@ -244,7 +245,7 @@ void power_off(){
 
 /*@	requires (the_qubie_state == START);
    	ensures (the_qubie_state == RUNNING);
-   	assigns the_qubie_state;
+   	assigns \nothing;
  */
 void power_on_boot_and_run(){
 	power_on();
@@ -254,8 +255,8 @@ void power_on_boot_and_run(){
 
 /*@
    	ensures (the_qubie_state == POWERED_OFF);
-    ensures logical_published(state);
-    assigns the_qubie_state;
+    ensures logical_published(POWERED_OFF);
+    assigns \nothing;
  */
 void shut_down(){
 	if (the_qubie.state != POWERED_OFF) {
@@ -263,10 +264,10 @@ void shut_down(){
 	}
 };
 
-//@TODO define qubie_legal_update_state(the_state)
+//TODO define qubie_legal_update_state(the_state)
 /*@ requires the_state == STOPPED || the_state == POWERED_OFF;
    	ensures the_qubie_state == the_state;
-   	assigns the_qubie_state;
+   	assigns \nothing;
  */
 void update_state( state_t the_state){
 	//TBD switch to an array of function pointers
@@ -276,7 +277,7 @@ void update_state( state_t the_state){
 		power_off();
 	} else {
 		//not a legal state
-		//@assert(false)
+		//@assert(false);
 		assert(false);
 	}
 };
@@ -291,7 +292,7 @@ void qubie_publish_action( state_t the_state){
 };
 
 /*@ ensures logical_observations_contains(the_contact_record);
-   	ensures logical_logged();
+   	ensures logical_logged(QUBIE_DETECTED_DEVICE, &the_contact_record);
    	assigns the_qubie.log, the_qubie.observations;
  */
 void record_observation( contact_record_t the_contact_record){
@@ -304,16 +305,23 @@ void record_observation( contact_record_t the_contact_record){
 
 /*@	requires the_qubie_state == RUNNING;
    	ensures wifi_monitor_polled && bt_communicator_polled;
-   	ensures state != RUNNINNG || iterations >= MAX_TEST_ITERATIONS;
+   	ensures the_qubie_state != RUNNING;
    	assigns \nothing;
  */
 void run_loop(){
 	unsigned long iterations = 0;
+	/*@	loop invariant 0<=iterations<MAX_TEST_ITERATIONS;
+	  	loop invariant the_qubie_state == RUNNING;
+	  	loop variant MAX_TEST_ITERATIONS - iterations;
+	 */
 	while (running() && iterations < MAX_TEST_ITERATIONS){
 		printf("DEBUG - iteration: %lu\n",iterations);
 		poll_wifi_monitor();
 		poll_bt_communicator();
 		iterations++;
+	}
+	if(running()) {
+		stop_running();
 	}
 };
 

@@ -102,7 +102,7 @@ const state_t *get_bt_communicator_legal_update_states(){
    	ensures self->bt_client==the_bluetooth_client;
    	ensures self->subscribed;
    	ensures bt_client_subscribed;
-   	assigns self->subscribed, self->bt_client, bt_client_subscribed;
+   	assigns self->subscribed, self->bt_client;
  */
 void subscribe( bt_client_t *the_bluetooth_client){
 	self->bt_client = the_bluetooth_client;
@@ -112,7 +112,7 @@ void subscribe( bt_client_t *the_bluetooth_client){
 /*@ requires self->subscribed;
    	ensures !self->subscribed;
    	ensures !bt_client_subscribed;
-   	assigns self->subscribed, bt_client_subscribed;
+   	assigns self->subscribed;
  */
 void unsubscribe(){
 	self->bt_client = NULL;
@@ -120,7 +120,7 @@ void unsubscribe(){
 };
 
 /*@ ensures !bt_client_subscribed || bt_client_qubie_state == the_state;
-   	assigns the_qubie_state, bt_client_qubie_state;
+   	assigns \nothing;
  */
 void bt_communicator_publish_action( state_t the_state){
 	if (self->subscribed) {
@@ -131,7 +131,7 @@ void bt_communicator_publish_action( state_t the_state){
 /*@ requires the_state == STOPPED ^^ the_state == POWERED_OFF; //design: legal states
    	ensures the_state == the_qubie.state;
    	ensures the_state == the_qubie_state;
-   	assigns the_qubie.state, the_qubie_state;
+   	assigns the_qubie.state;
  */
 void bt_communicator_update_qubie_state( state_t the_state){
 	update_state( the_state);
@@ -139,8 +139,7 @@ void bt_communicator_update_qubie_state( state_t the_state){
 
 //design allow bt_client to do whatever is in its spec.
 /*@	ensures bt_communicator_polled;
-   	assigns bt_client_subscribed, bt_client_qubie_state, the_qubie_state,
-   			self->subscribed, self->bt_client, the_qubie.state, bt_communicator_polled;
+   	assigns self->subscribed, self->bt_client, the_qubie.state;
  */
 void poll_bt_communicator(){
 	poll_bt_client();

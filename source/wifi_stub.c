@@ -21,7 +21,7 @@ The name of Tim Carstens may not be used to endorse or promote products derived 
 
 /* Insert 'wh00t' for the BSD license here */
 
-//@TODO remove -- only for test purposes
+//TODO remove -- only for test purposes
 void __print_byte_array(char *title, const unsigned char *arr, const uint size ){
 	printf("DEBUG - %s: ", title);
 	for (int i=0; i< size; ++i){
@@ -129,7 +129,7 @@ int qubie_pcap_get_packet(){
 //		bpf_u_int32 len; /* length this packet (off wire) */
 //	};
 
-	//@TODO verify we need little endian
+//	TODO verify we need little endian
 	rtap_len = (uint)packet[3]<<8|(uint)packet[2];
 	printf("DEBUG - rtap length: %d\n", rtap_len);
 	__print_byte_array("rtap header", packet, rtap_len);
@@ -161,7 +161,7 @@ int qubie_pcap_get_packet(){
 	__print_byte_array("SMAC", ethernet->ether_shost, MAC_SIZE);
 	__print_byte_array("DMAC", ethernet->ether_dhost, MAC_SIZE);
 
-	//@TODO test in (wifi) monitor mode
+//	TODO test in (wifi) monitor mode
 	//design using static "0" rssi (rssi only valid in (wifi) monitor mode)
 	//report_detected_device((unsigned char *)ethernet->ether_shost, 0, frequency());
 	report_detected_device((unsigned char *)ethernet->ether_shost, the_rssi, the_frequency);
@@ -178,9 +178,9 @@ void qubie_pcap_close(){
 };
 
 
-/* @requires running()
-   @TODO ensures wifi_monitor and bt_client are polled
-   @ensures state > running;
+/*@	requires running()
+   //TODO ensures wifi_monitor and bt_client are polled
+   ensures state > running;
  */
 void __pcap_run_loop(){
 	unsigned long iterations = 0;

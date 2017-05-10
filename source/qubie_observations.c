@@ -39,7 +39,7 @@ qubie_observations_t make_qubie_observations(const char *filename){
 	//*(contact_record_t *)&observations_struct->last=NULL;
 	observations_struct->observations_fp = fopen(filename, "w");
 	//design print header file
-	//@TBD the best way to sync header with data
+//	TBD the best way to sync header with data
 	fprintf(observations_struct->observations_fp, "device,time,rssi,frequency\n");
 	fflush(observations_struct->observations_fp);
 	return *observations_struct;
@@ -60,7 +60,7 @@ contact_record_t make_contact_record( device_id_t const device_id,
 	contact_record_t *contact_record_struct = malloc (sizeof(struct contact_record));
 	memcpy((device_id_t *)&contact_record_struct->device_id, &device_id,sizeof(struct device_id));
 	//design device_id is only used in the context of the contact record
-	//free((void *)&device_id); //@TBD does this need to be freed?
+	//free((void *)&device_id);// TBD does this need to be freed?
 	*(qubie_time_t *)&contact_record_struct->contact_time = contact_time;
 	*(rssi_t *)&contact_record_struct->rssi = rssi;
 	*(frequency_t *)&contact_record_struct->frequency = frequency;

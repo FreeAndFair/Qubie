@@ -3,7 +3,7 @@
 #include "qubie_t.h"
 #include "qubie_log.h"
 #include <sodium.h>
-#include <time.h> //@TODO take only what is needed from this library
+#include <time.h>// TODO take only what is needed from this library
 #include <assert.h>
 #include <string.h>
 

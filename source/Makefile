@@ -25,7 +25,7 @@ main: $(SOURCE_FILES) $(STUB_FILES)
 	$(CC) $(CFLAGS) -o $(SYSTEM)_main  $(SOURCE_FILES) $(STUB_FILES)  $(LDFLAGS) 
 
 typecheck:
-	frama-c -lib-entry -c11 $(SOURCE_FILES) $(STUB_FILES)
+	frama-c -lib-entry -c11 -cpp-extra-args="$(CFLAGS) $(LDFLAGS)"  $(SOURCE_FILES) $(STUB_FILES) 
 
 wp:
 	frama-c -lib-entry -c11 -wp -wp-rte $(SOURCE_FILES) $(STUB_FILES)

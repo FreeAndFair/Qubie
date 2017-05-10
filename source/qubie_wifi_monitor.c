@@ -126,7 +126,7 @@ bool __good_packet() {
 */
 
 
-/*@ requires the_logical_wifi_monitor_state == RUNNING;
+/*@ requires the_logical_wifi_monitor_state == MONITOR_RUNNING;
    	ensures wifi_interface_polled;
    	assigns wifi_interface_polled;
  */
@@ -166,7 +166,7 @@ void __process_packet() {
 	report_detected_device(*smac_ptr, the_rssi, the_frequency);
 }
 
-/*@ requires the_logical_wifi_monitor_state == RUNNING;
+/*@ requires the_logical_wifi_monitor_state == MONITOR_RUNNING;
    ensures !wifi_interface_polled;
    	ensures the_qubie.observations.size == \old(the_qubie.observations.size) + good_packets;
    	assigns wifi_interface_polled, rtap_header_valid, the_qubie.observations;
@@ -193,14 +193,14 @@ void __poll_wifi_interface(){
 // @bon QUERIES
 // ====================================================================
 
-/*@ ensures \result <==> (the_logical_wifi_monitor_state == BOOTED ||
-  							the_logical_wifi_monitor_state == RUNNING);
+/*@ ensures \result <==> (the_logical_wifi_monitor_state == MONITOR_BOOTED ||
+  							the_logical_wifi_monitor_state == MONITOR_RUNNING);
    	assigns \nothing;
  */
 bool wifi_booted(){
 	return self->wifi_booted;
 };
-/*@ ensures \result <==> (the_logical_wifi_monitor_state == RUNNING);
+/*@ ensures \result <==> (the_logical_wifi_monitor_state == MONITOR_RUNNING);
    	assigns \nothing;
  */
 bool wifi_running(){
@@ -230,8 +230,8 @@ frequency_t frequency(){
 // @bon COMMANDS
 // ====================================================================
 
-/*@ requires the_logical_wifi_monitor_state == START;
-   ensures the_logical_wifi_monitor_state == BOOTED;
+/*@ requires the_logical_wifi_monitor_state == MONITOR_START;
+   ensures the_logical_wifi_monitor_state == MONITOR_BOOTED;
    ensures self->keyed_hash.set;
    ensures logical_logged(WIFI_MONITOR_STATE, "booted");
    ensures self->frequency = self->frequency_range[wifi_channel_index];
@@ -242,32 +242,32 @@ void boot_wifi(){
 	set_key(the_key);
 	free(the_key);
 	self->frequency = self->frequency_range[wifi_channel_index];
-	//@TODO boot actual wifi device
+//	TODO boot actual wifi device
 	__boot_wifi_interface();
 	add_log_entry(WIFI_MONITOR_STATE, (void *)"booted");
 	self->wifi_booted = true;
 };
 
-/*@ requires the_logical_wifi_monitor_state == BOOTED;
-   	ensures the_logical_wifi_monitor_state == RUNNING;
+/*@ requires the_logical_wifi_monitor_state == MONITOR_BOOTED;
+   	ensures the_logical_wifi_monitor_state == MONITOR_RUNNING;
    	ensures logical_logged(WIFI_MONITOR_STATE, "running");
    assigns, self->running, the_qubie.log, the_logical_wifi_monitor_state;
  */
 void start_wifi(){
-	//@TODO start actual wifi device
+//	TODO start actual wifi device
 	add_log_entry(WIFI_MONITOR_STATE, (void *)"running");
 	self->wifi_running = true;
 };
 
 //design there is no difference between booted and stopped because both can lead to running (but are not currently running)
-/*@ requires the_logical_wifi_monitor_state == RUNNING;
-   	ensures the_logical_wifi_monitor_state == BOOTED;
+/*@ requires the_logical_wifi_monitor_state == MONITOR_RUNNING;
+   	ensures the_logical_wifi_monitor_state == MONITOR_BOOTED;
    	ensures !\valid(handle);
    	ensures logical_logged(WIFI_MONITOR_STATE, "stopped");
    assigns handle, the_qubie.log, the_logical_wifi_monitor_state;
  */
 void stop_wifi(){
-	//@TODO stop actual wifi device
+//	TODO stop actual wifi device
 	pcap_close(handle);
 	add_log_entry(WIFI_MONITOR_STATE, (void *)"stopped");
 	self->wifi_running = false;
@@ -280,7 +280,7 @@ void stop_wifi(){
 
 void set_frequency( frequency_t the_frequency){
 	self->frequency = the_frequency;
-	//@TODO set frequency of actual wifi device
+//	TODO set frequency of actual wifi device
 	add_log_entry(WIFI_MONITOR_FREQUENCY, (void *)the_frequency);
 };
 
@@ -290,7 +290,7 @@ void set_frequency( frequency_t the_frequency){
  */
 void set_auto_hopping( bool the_truth_val){
 	self->auto_hopping = the_truth_val;
-	//@TODO set auto hopping state of actual wifi device
+//	TODO set auto hopping state of actual wifi device
 	add_log_entry(WIFI_MONITOR_AUTO_HOPPING, (void *)the_truth_val);
 
 };
@@ -338,7 +338,7 @@ void report_unsupported_packet(char * message){
 	add_log_entry(WIFI_MONITOR_UNSUPPORTED_PACKET, (void *)message);
 };
 
-/*@ requires the_logical_wifi_monitor_state == RUNNING;
+/*@ requires the_logical_wifi_monitor_state == MONITOR_RUNNING;
    	ensures wifi_monitor_polled;
    assigns wifi_monitor_polled;
  */
