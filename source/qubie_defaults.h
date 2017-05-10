@@ -16,22 +16,22 @@
 #define WIFI_AUTO_HOPPING_DEFAULT true
 
 //in test mode there is an option to read packets from a file instead of a live wifi interface
-//@design uncomment the below to read from file (test mode only)
+//design uncomment the below to read from file (test mode only)
 #define PCAP_TEST_FILE "test.pcap"
 
-//@design unremark in order to test with a specific seed
+//design unremark in order to test with a specific seed
 //#define RANDOM_SEED 1
 
-//@design all times listed in seconds but actual tests will be sped up 1000x
+//design all times listed in seconds but actual tests will be sped up 1000x
 //to avoid infinite loop set max number of run loop iterations before shutting down.
-//@design only relevant in test mode
+//design only relevant in test mode
 #define MAX_TEST_ITERATIONS 15*60*60 //15 hours
-//@design the amount of time to wait in each wifi sniffing interval
+//design the amount of time to wait in each wifi sniffing interval
 #define WIFI_PAUSE_TIME 5 //5 seconds
 
-//@TODO model voter related intervals according to poisson distribution
+//TODO model voter related intervals according to poisson distribution
 
-//@design average interval between voters arriving
+//design average interval between voters arriving
 //for exponential distribution of intervals
 //which results in poisson distribution of voters
 #define VOTER_ARRIVAL_INTERVAL (10*60) //10 minutes
@@ -40,17 +40,17 @@
 
 // ====================================================================
 
-//@design time to wait while snifing packets on a given freq
+//design time to wait while snifing packets on a given freq
 #define WIFI_TIMEOUT 5000 //5 seconds
-//@design max number of packets to intercept on a given freq in a given interval
+//design max number of packets to intercept on a given freq in a given interval
 #define PACKET_COUNT_LIMIT 10 //10 packets
-//@design a string to define a filter for the wifi device
+//design a string to define a filter for the wifi device
 //unremark and set string to activate the filter
 //#define WIFI_FILTER_STR ""
 
 /* channels 12 and 13 are not really in use in the us but they are added because they are used in other countries
  * and also in specific cases inside the usa. channel 14 (2484MHz) is omitted because it is not in use by cell phones
- * @TODO verify the channels are correct (current source is wikipedia)
+ * TODO verify the channels are correct (current source is wikipedia)
  */
 #define FREQUENCY_WIFI_CHANNELS {	\
 		2412, 2417, 2422, 2427, 2432, 2437, 2442, 2447, 2452, 2457,	\
@@ -66,7 +66,7 @@
 }
 //default value for starting wifi frequency (MHz)
 #define NUM_WIFI_CHANNELS 68
-//@TODO verify WIFI_CHANNEL_DEFAULT < NUM_WIFI_CHANNELS
+//TODO verify WIFI_CHANNEL_DEFAULT < NUM_WIFI_CHANNELS
 #define WIFI_CHANNEL_DEFAULT 0
 
 //the maximum length of a log message (including null terminator)

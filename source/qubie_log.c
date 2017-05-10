@@ -13,7 +13,7 @@ static qubie_logger_t *self = &the_qubie.log;
 
 //helper functions
 /*@	requires \valid(self->log_fp);
- * 	assigns *self->log_fp;
+   	assigns *self->log_fp;
  */
 void __write_log_entry_to_file( log_entry_t the_entry){
 	fprintf(self->log_fp, "%s\n", the_entry.message);
@@ -23,8 +23,8 @@ void __write_log_entry_to_file( log_entry_t the_entry){
 
 //constructors
 /*@ requires \valid(message_val);
- * 	ensures \valid_read(\result);
- * 	assigns \nothing;
+   	ensures \valid_read(\result);
+   	assigns \nothing;
  */
 char const *make_log_message(message_t message_type, void *message_val, qubie_time_t message_time){
 	int buff_size = MAX_MESSAGE_LEN;
@@ -65,8 +65,8 @@ char const *make_log_message(message_t message_type, void *message_val, qubie_ti
 };
 
 /*@ requires \valid(message_val);
- * 	ensures \valid_read(\result);
- * 	assigns \nothing;
+   	ensures \valid_read(\result);
+   	assigns \nothing;
  */
 log_entry_t make_log_entry(message_t message_type, void* message_val){
 	log_entry_t *log_entry_struct = malloc(sizeof(struct log_entry));
@@ -92,17 +92,17 @@ qubie_logger_t make_qubie_logger(const char* filename){
 // ====================================================================
 
 /*@ ensures (0 == self->size) == \result;
- * 	assigns \nothing;
+   	assigns \nothing;
  */
 bool log_empty(){
 	return 0==self->size;
 };
 
 /*@	design this method is only for defining contracts
- *	requires \valid(message_val);
- *	ensures \result == ((the_last_log_entry_message_type == message_type)
- *						&& (the_last_log_entry_message_val == message_val));
- * 	assigns \nothing;
+   requires \valid(message_val);
+   ensures \result == ((the_last_log_entry_message_type == message_type)
+   					&& (the_last_log_entry_message_val == message_val));
+   	assigns \nothing;
  */
 bool logged( message_t message_type, void* message_val){
 	//@assert(false);
@@ -124,10 +124,10 @@ qubie_time_t current_time(qubie_time_t *seconds){
 
 
 /*@ requires \valid(message_val);
- * 	ensures the_last_log_entry_message_type == message_type;
- * 	ensures the_last_log_entry_message_val == message_val;
- *
- * 	assigns the_last_log_entry_message_type, the_last_log_entry_message_val;
+   	ensures the_last_log_entry_message_type == message_type;
+   	ensures the_last_log_entry_message_val == message_val;
+
+   	assigns the_last_log_entry_message_type, the_last_log_entry_message_val;
  */
 void add_log_entry( message_t message_type, void* message_val){
 	log_entry_t the_entry = make_log_entry(message_type, message_val);

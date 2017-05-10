@@ -32,7 +32,7 @@ void __print_byte_array(char *title, const unsigned char *arr, const uint size )
 
 
 /* @requires pcap_closed
- * @ensures pcap_open
+   @ensures pcap_open
  */
 int qubie_pcap_init(){
 	char *dev;			/* The device to sniff on */
@@ -137,7 +137,7 @@ int qubie_pcap_get_packet(){
 		report_unsupported_packet((void *)"bad radiotap header length");
 		return(2);
 	}
-	//@design two bytes to represent the channel frequency (disregard flag data)
+	//design two bytes to represent the channel frequency (disregard flag data)
 	the_frequency = (uint)packet[rtap_len - 7]<<8|(uint)packet[rtap_len - 8];
 	the_rssi = packet[rtap_len - 4];
 
@@ -162,7 +162,7 @@ int qubie_pcap_get_packet(){
 	__print_byte_array("DMAC", ethernet->ether_dhost, MAC_SIZE);
 
 	//@TODO test in (wifi) monitor mode
-	//@design using static "0" rssi (rssi only valid in (wifi) monitor mode)
+	//design using static "0" rssi (rssi only valid in (wifi) monitor mode)
 	//report_detected_device((unsigned char *)ethernet->ether_shost, 0, frequency());
 	report_detected_device((unsigned char *)ethernet->ether_shost, the_rssi, the_frequency);
 
@@ -171,7 +171,7 @@ int qubie_pcap_get_packet(){
 };
 
 /* @requrires pcap_open
- * @ensures pcap_closed
+   @ensures pcap_closed
  */
 void qubie_pcap_close(){
 	pcap_close(handle);
@@ -179,8 +179,8 @@ void qubie_pcap_close(){
 
 
 /* @requires running()
- * @TODO ensures wifi_monitor and bt_client are polled
- * @ensures state > running;
+   @TODO ensures wifi_monitor and bt_client are polled
+   @ensures state > running;
  */
 void __pcap_run_loop(){
 	unsigned long iterations = 0;
@@ -207,11 +207,11 @@ void pcap_test(){
 	}
 };
 
-//@ design create a device with random data and record it in observations and lng
+//design create a device with random data and record it in observations and lng
 /*@	requires randoms_initiated;
- * 	requires TEST_MODE;
- * 	ensures the_qubie.observations.size == \old(the_qubie.observations.size) + 1;
- * 	assigns observations_array, the_qubie.observations, the_qubie.log;
+   	requires TEST_MODE;
+   	ensures the_qubie.observations.size == \old(the_qubie.observations.size) + 1;
+   	assigns the_qubie.observations, the_qubie.log;
  */
 void report_random_device(){
 	assert(TEST_MODE);

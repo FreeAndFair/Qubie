@@ -16,8 +16,8 @@ static keyed_hash_t *self = &the_qubie.wifi_monitor.keyed_hash;
 
 //@TODO ensures Result is an exact string representation of the binary
 /*@ requires \valid_read(the_binary + (0 .. num_bytes));
- * 	ensures \valid_read(\result + (0 .. num_bytes * 2 +1));
- * 	assigns \nothing;
+   	ensures \valid_read(\result + (0 .. num_bytes * 2 +1));
+   	assigns \nothing;
  */
 char * const __binToString(unsigned char * the_binary, const size_t num_bytes){
 	const size_t string_max_length = num_bytes * 2 +1;
@@ -49,7 +49,7 @@ keyed_hash_t make_keyed_hash(){
 // ====================================================================
 //@TODO ensures write-once
 /*@ ensures \result == self->set;
- * 	assigns \nothing;
+   	assigns \nothing;
  */
 bool set(){
 	return self->set;
@@ -62,14 +62,14 @@ bool set(){
 
 //@TODO ensures hash.hash(the_string) == Result;
 /*@ requires self->set;
- * 	ensures \valid_read(\result + (0 .. MAC_STRING_LEN);
- * 	assigns \nothing;
+   	ensures \valid_read(\result + (0 .. MAC_STRING_LEN);
+   	assigns \nothing;
  */
 char const *hashed_string( bool encrypted, mac_t the_string){
 	unsigned char *mac_buf;
 	char const *string_ptr;
 	if(encrypted) {
-		//@design TBD keep a single static buffer instead of allocating and freeing every time.
+		//design TBD keep a single static buffer instead of allocating and freeing every time.
 		mac_buf = malloc(sizeof(mac_t) * MAC_SIZE);
 		crypto_generichash(mac_buf, MAC_SIZE, the_string, MAC_SIZE, (const unsigned char *)self->key, KEY_SIZE);
 		string_ptr = __binToString(mac_buf, MAC_SIZE);
@@ -82,8 +82,8 @@ char const *hashed_string( bool encrypted, mac_t the_string){
 
 //implemetned with libsodium
 /*@ requires true;
- * 	ensures \valid_read(\result (0 .. KEY_SIZE));
- * 	assigns \nothing;
+   	ensures \valid_read(\result (0 .. KEY_SIZE));
+   	assigns \nothing;
  */
 qubie_key_t *create_random_key(){
 	unsigned char sodium_init_ret = sodium_init();
@@ -101,14 +101,14 @@ qubie_key_t *create_random_key(){
 // ====================================================================
 
 /*@ requires !self->set;
- * 	ensures self->key == the_key;
- * 	ensures self->set;
- * 	assigns self->key, self->set;
+   	ensures self->key == the_key;
+   	ensures self->set;
+   	assigns self->key, self->set;
  */
 //@ delta {set, hash, key};
 void set_key( qubie_key_t *the_key){
 	memcpy((qubie_key_t *)&self->key,the_key,sizeof(qubie_key_t));
-	//@design this is the only location where set can be modified
+	//design this is the only location where set can be modified
 	*(bool *)&self->set = true;
 };
 

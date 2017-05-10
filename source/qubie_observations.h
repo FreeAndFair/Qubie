@@ -14,17 +14,17 @@ contact_record_t make_contact_record(const device_id_t device_id,
 device_id_t make_device_id(mac_t raw_identifier);
 
 // ====================================================================
-// @bon QUERIES
+// bon QUERIES
 // ====================================================================
 
-//@ ensures (0 == size) == Result
+// ensures (0 == size) == Result
 bool observations_empty();
 
-/*@rTODO ensures the_contact_record in observations
+/*rTODO ensures the_contact_record in observations
  */
 bool observations_contains( contact_record_t the_contact_record);
 
-/*@ ensures old size + 1 == size;
+/* ensures old size + 1 == size;
  * 	ensures observations_contains(the_contact_record);
  */
 void add_contact_record( contact_record_t the_contact_record);

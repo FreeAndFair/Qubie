@@ -19,13 +19,36 @@ BON_FILES =  $(INFORMAL_BON_FILES) $(FORMAL_BON_FILES) $(REQUIREMENTS)
 	typecheck-informal typecheck-formal \
 	typecheck-static typecheck-dynamic
 
-all: main typecheck $(SYSTEM)-iig.dot index.txt index.html html/index.html
+all: main typecheck typecheck-bonc 
 
 main: $(SOURCE_FILES) $(STUB_FILES)
 	$(CC) $(CFLAGS) -o $(SYSTEM)_main  $(SOURCE_FILES) $(STUB_FILES)  $(LDFLAGS) 
 
+typecheck:
+	frama-c -lib-entry -c11 $(SOURCE_FILES) $(STUB_FILES)
 
-typecheck: typecheck-informal typecheck-formal \
+wp:
+	frama-c -lib-entry -c11 -wp -wp-rte $(SOURCE_FILES) $(STUB_FILES)
+
+wp-verbose-report:
+	frama-c -lib-entry -c11 -wp-verbose 0 $(SOURCE_FILES) $(STUB_FILES) -then -report 
+
+wp-all-provers:
+	frama-c -lib-entry -c11 -wp -wp-rte -wp-prover cvc4,z3,yices,alt-ergo $(SOURCE_FILES) $(STUB_FILES)
+
+aorai:
+	frama-c -lib-entry -c11 software.c -aorai-automata ../specs/software.ya
+
+metrics:
+	frama-c -lib-entry -c11 -metrics $(SOURCE_FILES) $(STUB_FILES)
+
+value:
+	frama-c -c11 -val $(SOURCE_FILES) $(STUB_FILES)
+
+gui:
+	frama-c-gui -lib-entry -c11 $(SOURCE_FILES) $(STUB_FILES)
+
+typecheck-bonc: typecheck-informal typecheck-formal \
 	typecheck-static typecheck-dynamic typecheck-consistency
 
 typecheck-consistency:
@@ -46,18 +69,4 @@ typecheck-dynamic:
 clean:
 	rm -f *.o
 
-$(SYSTEM)-icg.dot: $(BON_FILES)
-	bonc -g ICG $(BON_FILES) > $(SYSTEM)-icg.dot
 
-$(SYSTEM)-iig.dot: $(BON_FILES)
-	bonc -p IIG -po $(SYSTEM)-iig.dot $(BON_FILES)
-
-index.txt: $(BON_FILES)
-	bonc -po index.txt -p TXT $(BON_FILES)
-
-index.html: $(BON_FILES)
-	bonc -po index.html -p HTML $(BON_FILES)
-
-html/index.html: $(BON_FILES)
-	mkdir -p html
-	bonc -p NEWHTML -po html $(BON_FILES)

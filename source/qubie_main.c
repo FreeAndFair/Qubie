@@ -13,10 +13,10 @@ extern qubie_t the_qubie;
 extern bt_client_t the_bt_client;
 
 //helper functions
-// @design to init pseudo random test seeds.
-// @design does not effect hash key. NOT SECURE FOR HASH KEY SEEDS!!!
+// design to init pseudo random test seeds.
+// design does not effect hash key. NOT SECURE FOR HASH KEY SEEDS!!!
 /*@	requires !randoms_initiated
- * ensures randoms_initiated
+   ensures randoms_initiated
  */
 void init_random_number_generator(){
 	unsigned long seed;
@@ -73,7 +73,7 @@ void __PcapTest(){
 };
 
 //"Normal Test but with encrypted=false"
-//@design implemented by NormalTest and setting #define ENCRYPTED false
+//design implemented by NormalTest and setting #define ENCRYPTED false
 // @scenario
 void UnencryptedTest(){
 	//@assert(false);
