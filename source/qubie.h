@@ -92,6 +92,8 @@ void power_off();
  */
 void power_on_boot_and_run();
 
+void shut_down();
+
 //@TODO define qubie_legal_update_state(the_state)
 /*@ requires qubie_legal_update_state(the_state);
  * 	ensures the_state == state;

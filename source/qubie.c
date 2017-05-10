@@ -226,15 +226,20 @@ void stop_running(){
 	__set_and_publish(STOPPED);
 };
 
-/*@ ensures (the_qubie_state == POWERED_OFF);
+/*@ requires the_qubie_state != POWERED_OFF;
+ * 	ensures (the_qubie_state == POWERED_OFF);
  *  ensures logical_published(state);
  *  assigns the_qubie_state;
  */
 void power_off(){
 	__set_and_publish(POWERED_OFF);
 	//@TBD move cleanup code to the relevant modules.
-	fclose(the_qubie.log.log_fp);
-	fclose(the_qubie.observations.observations_fp);
+	if(the_qubie.log.log_fp) {
+		fclose(the_qubie.log.log_fp);
+	}
+	if(the_qubie.observations.observations_fp) {
+		fclose(the_qubie.observations.observations_fp);
+	}
 };
 
 /*@	requires (the_qubie_state == START);
@@ -245,6 +250,17 @@ void power_on_boot_and_run(){
 	power_on();
 	start_booting();
 	start_running();
+};
+
+/*@
+ * 	ensures (the_qubie_state == POWERED_OFF);
+ *  ensures logical_published(state);
+ *  assigns the_qubie_state;
+ */
+void shut_down(){
+	if (the_qubie.state != POWERED_OFF) {
+		power_off();
+	}
 };
 
 //@TODO define qubie_legal_update_state(the_state)

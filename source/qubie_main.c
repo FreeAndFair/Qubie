@@ -53,7 +53,7 @@ void NormalTest(){
 	power_on_boot_and_run();
 	create_and_subscribe_bt_client();
 	run_loop();
-	bt_communicator_update_qubie_state(POWERED_OFF);
+	shut_down();
 };
 
 //TBD --include multiple subscribe/unsubscribe and multiple options of detecting devices on differnt frequencies
