@@ -12,6 +12,9 @@ extern qubie_t the_qubie;
 static qubie_logger_t *self = &the_qubie.log;
 
 //helper functions
+/*@	requires \valid(self->log_fp);
+ * 	assigns *self->log_fp;
+ */
 void __write_log_entry_to_file( log_entry_t the_entry){
 	fprintf(self->log_fp, "%s\n", the_entry.message);
 	fflush(self->log_fp);
@@ -19,6 +22,10 @@ void __write_log_entry_to_file( log_entry_t the_entry){
 
 
 //constructors
+/*@ requires \valid(message_val);
+ * 	ensures \valid_read(\result);
+ * 	assigns \nothing;
+ */
 char const *make_log_message(message_t message_type, void *message_val, qubie_time_t message_time){
 	int buff_size = MAX_MESSAGE_LEN;
 	char *buff = malloc(sizeof(char) * buff_size);
@@ -50,13 +57,17 @@ char const *make_log_message(message_t message_type, void *message_val, qubie_ti
 		snprintf(buff, buff_size, "%lu ERROR: %s",(unsigned long) message_time, (char *)message_val);
 		break;
 	default:
-		//assert(false)
+		//@assert(false);
 		assert(false);
 
 	}
 	return (char const *)buff;
 };
 
+/*@ requires \valid(message_val);
+ * 	ensures \valid_read(\result);
+ * 	assigns \nothing;
+ */
 log_entry_t make_log_entry(message_t message_type, void* message_val){
 	log_entry_t *log_entry_struct = malloc(sizeof(struct log_entry));
 	qubie_time_t message_time = current_time(NULL);
@@ -66,6 +77,7 @@ log_entry_t make_log_entry(message_t message_type, void* message_val){
 	*(qubie_time_t *)&log_entry_struct->time = message_time;
 	return *log_entry_struct;
 };
+
 
 qubie_logger_t make_qubie_logger(const char* filename){
 	qubie_logger_t *qubie_logger_struct = malloc(sizeof(struct qubie_logger));
@@ -79,16 +91,21 @@ qubie_logger_t make_qubie_logger(const char* filename){
 // @bon QUERIES
 // ====================================================================
 
-//@ ensures (0 == size) == Result
+/*@ ensures (0 == self->size) == \result;
+ * 	assigns \nothing;
+ */
 bool log_empty(){
 	return 0==self->size;
 };
 
-/*@design this method is only for defining contracts
-
+/*@	design this method is only for defining contracts
+ *	requires \valid(message_val);
+ *	ensures \result == ((the_last_log_entry_message_type == message_type)
+ *						&& (the_last_log_entry_message_val == message_val));
+ * 	assigns \nothing;
  */
 bool logged( message_t message_type, void* message_val){
-	//@assert(false)
+	//@assert(false);
 	assert(false);
 	//return (self->last_entry) &&
 	//		(message_type == self->last_entry->message_type) &&
@@ -96,8 +113,8 @@ bool logged( message_t message_type, void* message_val){
 	return false;
 };
 
+//@ assigns \nothing;
 qubie_time_t current_time(qubie_time_t *seconds){
-	//@TODO this is OS specific
 	return time((time_t *)seconds);
 };
 
@@ -106,8 +123,11 @@ qubie_time_t current_time(qubie_time_t *seconds){
 // ====================================================================
 
 
-/*@ ensures logged(message_type, message_val);
- *  @TODO ensures delta log[size];
+/*@ requires \valid(message_val);
+ * 	ensures the_last_log_entry_message_type == message_type;
+ * 	ensures the_last_log_entry_message_val == message_val;
+ *
+ * 	assigns the_last_log_entry_message_type, the_last_log_entry_message_val;
  */
 void add_log_entry( message_t message_type, void* message_val){
 	log_entry_t the_entry = make_log_entry(message_type, message_val);

@@ -138,9 +138,9 @@ void bt_communicator_update_qubie_state( state_t the_state){
 };
 
 //@design allow bt_client to do whatever is in it's spec.
-/*@
+/*@	ensures bt_communicator_polled;
  * 	assigns bt_client_subscribed, bt_client_qubie_state, the_qubie_state,
- * 			self->subscribed, self->bt_client, the_qubie.state
+ * 			self->subscribed, self->bt_client, the_qubie.state, bt_communicator_polled;
  */
 void poll_bt_communicator(){
 	poll_bt_client();

@@ -9,20 +9,24 @@
 #define QUBIE_ACSL
 
 
-#define MAX_OBSERVATIONS_SIZE INT_MAX;
+#define MAX_LOGIC_SIZE INT_MAX;
 //@design booted and stopped are in essence the same so no "stopped" state is needed
 typedef enum {START, BOOTED, RUNNING} monitor_state_t;
+
+//@ design to allow logical fields to be connected to real fields
+extern qubie_t the_qubie;
+extern bt_client_t the_bt_client;
 
 /*@ axiomatic Qubie {
 
   	logic state_t the_qubie_state;
-	logic monitor_state_t the_monitor_state;
+  	global invariant the_logical_qubie_state: the_qubie_state == the_qubie.state;
+	logic monitor_state_t the_logical_wifi_monitor_state;
+	logic bool initialized;
 
-	//@design logically structure observations as an array(even if it is implemented as a file)
-	//TODO is this a good way to do this?
-	logic contract_record_t observations_array[MAX_OBSERVATIONS_SIZE];
-	//TODO make this predicate global to deal with log_array as well
-	predicate observations_array_initialized: \forall int i: 0<= i < MAX_OBSERVATIONS_SIZE ==> observations_array[i] == \null;
+	//@design logically structure observations as an array (even if it is implemented as a file)
+	logic contract_record_t observations_array[MAX_LOGIC_SIZE];
+	predicate observations_array_initialized: \forall int i: 0<= i < MAX_LOGIC_SIZE ==> observations_array[i] == \null;
 	global invariant observations_array_initialized_at_init: \at(observations_array_initialized,Init);
 
 	// @design in order to init pseudo random test seeds an init function must be called.
@@ -34,14 +38,40 @@ typedef enum {START, BOOTED, RUNNING} monitor_state_t;
 
 	//@design: use these variables to implement the logic of the publish/published and log/logged contracts
 	logic contact_record_t the_last_contact_record;
-	logic log_entry_t the_last_contact_record;
+	logic message_t the_last_log_entry_message_type;
+	logic void * the_last_log_entry_message_val;
 
 	//@design keep logical copy of bt_client state to verify the state
+	logic bool bt_communicator_polled;
 	logic state_t bt_client_qubie_state;
 	logic bool bt_client_subscribed;
+	global invariant the_logical_bt_client_subscribed: bt_client_subscribed == the_qubie.bt_communicator.subscribed;
 	global invariant subscribed_bt_client_shows_qubie_state: bt_client_subscribed ==> (bt_client_qubie_state == the_qubie_state);
 
+	logic bool wifi_monitor_polled;
+	logic bool monitor_mode_enabled;
+	logic bool wifi_interface_polled;
+	logic_bool rtap_header_valid;
+	global_invariant wifi_disabled_at_start: \at(!monitor_mode_enabled &&
+									!wifi_interface_polled &&
+									!rtap_header_valid, Init);
 
+	//design for the sake of static evaluation it is enough to check that the last entry/action has been looged/published/added (no need to search the entire list/set/file)
+	predicate logical_logged{L}(message_t message_type, void * message_val) =
+				(message_type == the_last_log_entry_message_type &&
+				message_val == the_last_log_entry_message_val);
+
+
+	predicate logical_published{L}(state_t the_state) =
+				bt_client_subscribed ==> (bt_client_qubie_state == the_state);
+
+
+	predicate logical_observations_contains{L}(contact_record_t the_contact_record) =
+				(the_contact_record.device_id.identifier_string ==
+						the_last_contact_record.device_id.identifier_string &&
+				the_contact_record.contact_time == the_last_contact_record.contact_time &&
+				the_contact_record.rssi == the_last_contact_record.rssi &&
+				the_contact_record.frequency == the_last_contact_record.frequency);
 
 
 */
@@ -57,10 +87,10 @@ typedef enum {START, BOOTED, RUNNING} monitor_state_t;
 
 //@ global invariant system_starts_in_the_start_state: \at(the_qubie_state == START, Init);
 //@ global invariant monitor_starts_in_the_start_state: \at(the_monitor_state == START, Init);
-//@ global invariant bt_communicator_starts_unsubscribed: \at(subscribed() == false, Init);
-//@ global invariant keyed_hash_starts_unset: \at(set() == false, Init);
-//@ global invariant log_starts_empty: \at(log_empty() == true, Init);
-//@ global invariant observations_starts_empty: \at(observations_empty() == true, Init);
+//@ global invariant bt_communicator_starts_unsubscribed: \at(bt_client_subscribed == false, Init);
+//@ global invariant keyed_hash_starts_unset: \at(the_qubie.wifi_monitor.keyed_hash.set == false, Init);
+//@ global invariant log_starts_empty: \at(the_qubie.log.size == 0, Init);
+//@ global invariant observations_starts_empty: \at(the_qubie.observations.size == 0, Init);
 
 /*@ global invariant the_qubie_state_is_legal: the_qubie_state == START
 												^^ the_qubie_state == POWERED_ON
@@ -70,6 +100,10 @@ typedef enum {START, BOOTED, RUNNING} monitor_state_t;
 												^^ the_qubie_state == POWERED_OFF;
 */
 
+/*@ global invariant the_wifi_monitor_state_is_legal: the_wifi_monitor_state == START
+												^^ the_wifi_monitor_state == BOOTING
+												^^ the_wifi_monitor_state == RUNNING;
+*/
 
 
 

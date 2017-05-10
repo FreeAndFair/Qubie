@@ -8,7 +8,7 @@
 #include <pcap.h>
 
 //globals
-static unsigned int wifi_channel_index = WIFI_CHANNEL_DEFAULT;
+
 static pcap_t *handle;			/* Session handle */
 
 
@@ -207,10 +207,13 @@ void pcap_test(){
 	}
 };
 
-
-//@	requires randoms_initiated
+//@ design create a device with random data and record it in observations and lng
+/*@	requires randoms_initiated;
+ * 	requires TEST_MODE;
+ * 	ensures the_qubie.observations.size == \old(the_qubie.observations.size) + 1;
+ * 	assigns observations_array, the_qubie.observations, the_qubie.log;
+ */
 void report_random_device(){
-	//@assert(TEST_MODE)
 	assert(TEST_MODE);
 
 	mac_t the_mac;
@@ -222,13 +225,7 @@ void report_random_device(){
 	report_detected_device(the_mac, the_rssi, the_frequency);
 };
 
-void update_monitored_frequency(){
-	if(auto_hopping()){
-		//@design circularly increment the channel index and set "the_frequency" according to the relevant channel
-		set_frequency(frequency_range()[++wifi_channel_index % NUM_WIFI_CHANNELS]);
-	}
 
-};
 
 
 

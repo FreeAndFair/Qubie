@@ -57,6 +57,10 @@ void set_frequency( frequency_t the_frequency);
 //delta {auto_hopping, qubie.log};
 void set_auto_hopping( bool the_truth_val);
 
+
+void update_monitored_frequency();
+
+
 /*@ ensures qubie.observations.contains(CONTACT_RECORD.make(keyed_hash, the_mac_address, the_signal_strength));
  * 	ensures qubie.log.logged(WIFI_MONITOR_DETECTED_DEVICE, {the_mac_address, the_signal_strength})
  */

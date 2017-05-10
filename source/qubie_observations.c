@@ -101,7 +101,7 @@ bool observations_empty(){
 
 //@design this function is never used. it is only to fulfill a contract.
 /*@
- * 	ensures \result == (\exists int i; 0<= i <= size - 1 && \valid(observations_array[i]) && observations_array[i] == the_contact_record);
+ * 	ensures \result == (\exists int i; 0<= i <= self->size - 1 && \valid(observations_array[i]) && observations_array[i] == the_contact_record);
  * 	ensures \result == the_last_contact_record;
  * 	assigns \nothing;
  *

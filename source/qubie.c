@@ -48,15 +48,21 @@ qubie_t the_qubie = {
 //helper functions
 
 /*@ requires initialized;
- * 	ensures (the_state == new_state);
- *  ensures action_published(new_state);
+ * 	ensures (the_qubie_state == new_state);
+ * 	ensures logical_logged(new_state);
+ *  ensures logical_published(new_state);
+ *  assigns the_qubie_state, the_qubie.log, bt_client_qubie_state;
  */
 void __set_and_publish( state_t new_state){
 	the_qubie.state=new_state;
 	qubie_publish_action(new_state);
 };
 
-//@ensures initialized
+/*@
+ * requires !initialized;
+ * ensures initialized;
+ * assigns initialized;
+ */
 void __initialize_qubie(){
 	//init the log
 	the_qubie.log.log_fp = fopen("qubie_log.txt","w");
@@ -113,42 +119,58 @@ bt_communicator_t *bt_communicator(){
 	return &the_qubie.bt_communicator;
 };
 
-//@ ensures {stopped, powered_off} == Result
+/*@ ensures {STOPPED, POWERED_OFF} == \result;
+ * 	assigns \nothing;
+ */
 const state_t *qubie_legal_update_states(){
 	return the_qubie.legal_update_states;
 };
 
-//@ensures log.empty() and observations.empty()
+/*@	ensures the_qubie.log.size == 0 &&  the_qubie.observations.size == 0;
+ * 	ensures \result == initialized;
+ * 	assigns \nothing;
+ */
 bool initialized(){
 	return log_empty() && observations_empty();
 };
 
-//@ TODO add relevant predicates to avoid error prone syntax
-/*@ ensures Result == (state == POWERED_ON)
+/*@ ensures \result == (the_qubie_state == POWERED_ON);
+ * 	assigns \nothing;
  */
 bool powered_on(){
 	return POWERED_ON == the_qubie.state;
 };
-//@ ensures Result == (state == BOOTING)
+/*@ ensures \result == (the_qubie_state == BOOTING);
+ * 	assigns \nothing;
+ */
 bool booting(){
 	return BOOTING == the_qubie.state;
 };
-//@ ensures Result == (state == RUNNING)
+
+/*@ ensures \result == (the_qubie_state == RUNNING);
+ * 	assigns \nothing;
+ */
 bool running(){
 	return RUNNING == the_qubie.state;
 };
-//@ ensures Result == (state == STOPPED)
+
+/*@ ensures \result == (the_qubie_state == STOPPED);
+ * 	assigns \nothing;
+ */
 bool stopped(){
 	return STOPPED == the_qubie.state;
 };
-//@ ensures Result == (state == POWERED_OFF)
+
+/*@ ensures \result == (the_qubie_state == POWERED_OFF);
+ * 	assigns \nothing;
+ */
 bool powered_off(){
 	return POWERED_OFF == the_qubie.state;
 };
-/*@ ensures log.logged(QUBIE_STATE , state_strings[state]) &&
- *  (!bt_communicator.subscribed || bt_communicator.action_published(state))
- *
- * @design this should not be called it is only for the purpose of defining a contract
+
+//@ design this should not be called it is only for the purpose of defining a contract
+/*@ ensures logical_publish(the_state);
+ * 	assigns \nothing;
  */
 bool action_published( state_t the_state){
 	//@assert(false)
@@ -163,45 +185,50 @@ bool action_published( state_t the_state){
 // ====================================================================
 
 
-/*
- *@  ensures (state == POWERED_ON);
- *@  ensures action_published(state);
+/*@	requires the_qubie_state == START;
+ *  ensures (the_qubie_state == POWERED_ON);
+ *  ensures logical_published(state);
+ *  assigns the_qubie_state;
  */
 void power_on(){
 	__initialize_qubie();
 	__set_and_publish(POWERED_ON);
 };
 
-/*@ requires (state == POWERED_ON);
- *  ensures (state == BOOTING);
- *  ensures action_published(state);
+/*@ requires (the_qubie_state == POWERED_ON);
+ *  ensures (the_qubie_state == BOOTING);
+ *  ensures logical_published(state);
+ *  assigns the_qubie_state;
  */
 void start_booting(){
 	boot_wifi();
-	//@TBD is action needed for bt_communicator?
+	//TBD is action needed for bt_communicator?
 	__set_and_publish(BOOTING);
 };
 
-/*@ requires (state == BOOTING);
- *  ensures (state == RUNNING);
- *  ensures action_published(state);
+/*@ requires (the_qubie_state == BOOTING);
+ *  ensures (the_qubie_state == RUNNING);
+ *  ensures logical_published(state);
+ *  assigns the_qubie_state;
  */
 void start_running(){
 	start_wifi();
 	__set_and_publish(RUNNING);
 };
 
-/*@ requires (state == RUNNING);
- *  ensures (state == STOPPED);
- *  ensures action_published(state);
+/*@ requires (the_qubie_state == RUNNING);
+ *  ensures (the_qubie_state == STOPPED);
+ *  ensures logical_published(state);
+ *  assigns the_qubie_state;
  */
 void stop_running(){
 	stop_wifi();
 	__set_and_publish(STOPPED);
 };
 
-/*@ ensures (state == POWERED_OFF);
- *  ensures action_published(state);
+/*@ ensures (the_qubie_state == POWERED_OFF);
+ *  ensures logical_published(state);
+ *  assigns the_qubie_state;
  */
 void power_off(){
 	__set_and_publish(POWERED_OFF);
@@ -210,8 +237,9 @@ void power_off(){
 	fclose(the_qubie.observations.observations_fp);
 };
 
-/* @requires (state < BOOTING);
- * @ensures (state == RUNNING);
+/*@	requires (the_qubie_state == START);
+ * 	ensures (the_qubie_state == RUNNING);
+ * 	assigns the_qubie_state;
  */
 void power_on_boot_and_run(){
 	power_on();
@@ -220,11 +248,12 @@ void power_on_boot_and_run(){
 };
 
 //@TODO define qubie_legal_update_state(the_state)
-/*@ requires qubie_legal_update_state(the_state);
- * 	ensures the_state == state;
+/*@ requires the_state == STOPPED || the_state == POWERED_OFF;
+ * 	ensures the_qubie_state == the_state;
+ * 	assigns the_qubie_state;
  */
 void update_state( state_t the_state){
-	//@TODO switch to an array of function pointers
+	//TBD switch to an array of function pointers
 	if (STOPPED == the_state){
 		stop_running();
 	} else if (POWERED_OFF == the_state) {
@@ -236,17 +265,19 @@ void update_state( state_t the_state){
 	}
 };
 
-/*@ ensures action_published(the_state)
+/*@ ensures logical_published(the_state);
+ * 	ensures logical_logged(QUBIE_STATE, state_strings[the_state]);
+ * 	assigns \nothing;
  */
 void qubie_publish_action( state_t the_state){
 	add_log_entry(QUBIE_STATE , (void *)state_strings[the_state]);
 	bt_communicator_publish_action(the_state);
 };
 
-/*@ ensures observations.contains(the_contact_record)
- * 	ensures log.logged()
+/*@ ensures logical_observations_contains(the_contact_record);
+ * 	ensures logical_logged();
+ * 	assigns the_qubie.log, the_qubie.observations;
  */
-//delta {observations, log}
 void record_observation( contact_record_t the_contact_record){
 	//@design the contract record belongs to observations which will eventually free the memory
 	//log the data from the log entry first, while it is certain to exist.
@@ -255,9 +286,10 @@ void record_observation( contact_record_t the_contact_record){
 };
 
 
-/* @requires running()
- * @TODO ensures wifi_monitor and bt_client are polled
- * @ensures state > running;
+/*@	requires the_qubie_state == RUNNING;
+ * 	ensures wifi_monitor_polled && bt_communicator_polled;
+ * 	ensures state != RUNNINNG || iterations >= MAX_TEST_ITERATIONS;
+ * 	assigns \nothing;
  */
 void run_loop(){
 	unsigned long iterations = 0;
