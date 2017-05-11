@@ -62,7 +62,7 @@ bool set(){
 
 //TODO ensures hash.hash(the_string) == Result;
 /*@ requires self->set;
-   	ensures \valid_read(\result + (0 .. MAC_STRING_LEN);
+   	ensures \valid_read(\result + (0 .. MAC_STRING_LEN));
    	assigns \nothing;
  */
 char const *hashed_string( bool encrypted, mac_t the_string){
@@ -82,7 +82,7 @@ char const *hashed_string( bool encrypted, mac_t the_string){
 
 //implemetned with libsodium
 /*@ requires true;
-   	ensures \valid_read(\result (0 .. KEY_SIZE));
+   	ensures \valid_read(\result + (0 .. KEY_SIZE));
    	assigns \nothing;
  */
 qubie_key_t *create_random_key(){
@@ -101,11 +101,10 @@ qubie_key_t *create_random_key(){
 // ====================================================================
 
 /*@ requires !self->set;
-   	ensures self->key == the_key;
+   	ensures self->key == *the_key;
    	ensures self->set;
-   	assigns self->key, self->set;
+   	assigns *(self->key + (0 .. KEY_SIZE-1)), self->set;
  */
-//@ delta {set, hash, key};
 void set_key( qubie_key_t *the_key){
 	memcpy((qubie_key_t *)&self->key,the_key,sizeof(qubie_key_t));
 	//design this is the only location where set can be modified

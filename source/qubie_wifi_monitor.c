@@ -2,6 +2,7 @@
 
 #include "qubie_t.h"
 #include "qubie_defaults.h"
+#include "qubie.acsl"
 #include "qubie.h"
 #include "qubie_wifi_monitor.h"
 #include "qubie_keyed_hash.h"
@@ -71,7 +72,7 @@ void __open_wifi_interface() {
 /*@ requires !\valid(handle);
    	ensures \valid(handle);
    	ensures monitor_mode_enabled;
-   	assigns handle, monitor_mode_enabled;
+   	assigns handle;
  */
 void __boot_wifi_interface(){
 #ifdef PCAP_TEST_FILE
@@ -85,7 +86,7 @@ void __boot_wifi_interface(){
 };
 
 /*@ requires wifi_interface_polled;
-   ensures \result == \valid(current_packet);
+   ensures \result <==> \valid(current_packet);
    assigns \nothing;
  */
 bool __packet_ready() {
@@ -101,7 +102,7 @@ uint __rtap_length() {
 
 /*@ requires \valid(current_packet);
    	ensures \result == rtap_header_valid;
-   	assigns rtap_header_valid;
+   	assigns \nothing;
  */
 bool __good_packet() {
 	int dlt; //datalink type
@@ -128,7 +129,7 @@ bool __good_packet() {
 
 /*@ requires the_logical_wifi_monitor_state == MONITOR_RUNNING;
    	ensures wifi_interface_polled;
-   	assigns wifi_interface_polled;
+   	assigns current_packet;
  */
 void __get_packet(){
 	const byte *packet = NULL;
@@ -142,7 +143,7 @@ void __get_packet(){
 		//printf("DEBUG - No packet found before timeout.\n");
 		packet = NULL; //TBD is this needed?
 	} else if (-2 == res) {
-		//@assert(TEST_MODE)
+		//@assert(TEST_MODE);
 		assert(TEST_MODE);
 		//printf("DEBUG - no more packets in pcap test file.\n");
 	}
@@ -153,7 +154,7 @@ void __get_packet(){
 /*@	requires rtap_header_valid;
    	ensures !wifi_interface_polled;
    	ensures \old(rtap_header_valid) ==> the_qubie.observations.size == \old(the_qubie.observations.size) +1;
-   	assigns wifi_interface_polled, the_qubie.observations
+   	assigns the_qubie.observations;
  */
 void __process_packet() {
 	const byte *packet = current_packet;
@@ -167,25 +168,32 @@ void __process_packet() {
 }
 
 /*@ requires the_logical_wifi_monitor_state == MONITOR_RUNNING;
-   ensures !wifi_interface_polled;
-   	ensures the_qubie.observations.size == \old(the_qubie.observations.size) + good_packets;
-   	assigns wifi_interface_polled, rtap_header_valid, the_qubie.observations;
+ 	//TODO change packet limit to time limit + limit on number of processed packets
+   	ensures !wifi_interface_polled;
+   	ensures \old(the_qubie.observations.size) <= the_qubie.observations.size <= \old(the_qubie.observations.size) + PACKET_COUNT_LIMIT;
+   	assigns the_qubie.observations;
  */
 void __poll_wifi_interface(){
 	int collected_packets = 0;
-	bool more_packets = true;
-	while (collected_packets < PACKET_COUNT_LIMIT && more_packets) {
+	__get_packet();
+	/*@
+	  	loop invariant 0<=collected_packets<PACKET_COUNT_LIMIT;
+	  	loop invariant wifi_interface_polled;
+	  	loop variant PACKET_COUNT_LIMIT-collected_packets;
+	 */
+	while (collected_packets < PACKET_COUNT_LIMIT && __packet_ready()) {
 		//printf("DEBUG - getting packet\n");
-		//@ ghost int good_packets = 0;
-		__get_packet();
-		more_packets = __packet_ready();
-		if (more_packets && __good_packet()){
+		if (__packet_ready() && __good_packet()){
 			//printf("DEBUG - processing packet\n");
 			__process_packet();
-			//@ good_packets++;
+		}
+		if (collected_packets < PACKET_COUNT_LIMIT) {
+			__get_packet();
 		}
 		collected_packets++;
 	}
+	//enforce !wifi_interface_polled even when max packets is reached
+	current_packet = NULL;
 
 }
 
@@ -234,8 +242,8 @@ frequency_t frequency(){
    ensures the_logical_wifi_monitor_state == MONITOR_BOOTED;
    ensures self->keyed_hash.set;
    ensures logical_logged(WIFI_MONITOR_STATE, "booted");
-   ensures self->frequency = self->frequency_range[wifi_channel_index];
-   assigns, self->booted, the_qubie.log, the_logical_wifi_monitor_state, self->frequency;
+   ensures self->frequency == self->frequency_range[wifi_channel_index];
+   assigns self->wifi_booted, the_qubie.log, self->frequency;
  */
 void boot_wifi(){
 	qubie_key_t *the_key = create_random_key();
@@ -251,7 +259,7 @@ void boot_wifi(){
 /*@ requires the_logical_wifi_monitor_state == MONITOR_BOOTED;
    	ensures the_logical_wifi_monitor_state == MONITOR_RUNNING;
    	ensures logical_logged(WIFI_MONITOR_STATE, "running");
-   assigns, self->running, the_qubie.log, the_logical_wifi_monitor_state;
+   	assigns self->wifi_running, the_qubie.log;
  */
 void start_wifi(){
 //	TODO start actual wifi device
@@ -264,7 +272,7 @@ void start_wifi(){
    	ensures the_logical_wifi_monitor_state == MONITOR_BOOTED;
    	ensures !\valid(handle);
    	ensures logical_logged(WIFI_MONITOR_STATE, "stopped");
-   assigns handle, the_qubie.log, the_logical_wifi_monitor_state;
+   assigns handle, the_qubie.log;
  */
 void stop_wifi(){
 //	TODO stop actual wifi device
@@ -273,8 +281,8 @@ void stop_wifi(){
 	self->wifi_running = false;
 };
 
-/*@ ensures frequency==the_frequency;
-   	ensures logical_logged(WIFI_MONITOR_FREQUENCY, the_frequency);
+/*@ ensures self->frequency==the_frequency;
+   	ensures logical_logged(WIFI_MONITOR_FREQUENCY, (void *)the_frequency);
    	assigns self->frequency, the_qubie.log;
  */
 
@@ -285,7 +293,7 @@ void set_frequency( frequency_t the_frequency){
 };
 
 /*@ ensures self->auto_hopping==the_truth_val;
-   	ensures logical_logged(WIFI_MONITOR_AUTO_HOPPING, the_truth_val);
+   	ensures logical_logged(WIFI_MONITOR_AUTO_HOPPING, (void *)the_truth_val);
    	assigns self->auto_hopping, the_qubie.log;
  */
 void set_auto_hopping( bool the_truth_val){
@@ -296,11 +304,11 @@ void set_auto_hopping( bool the_truth_val){
 };
 
 //design circularly increment the channel index and set "the_frequency" according to the relevant channel
-/*@	requires \valid(self.frequency_range[wifi_channel_index]);
-   	ensures self.frequency == self.frequency_range[wifi_channel_index];
-   	ensures self->auto_hopping <==> wifi_channel_index == \old(wifi_channel_index);
-   	ensures \valid(self.frequency_range[wifi_channel_index]);
-   	assign self.frequency, wifi_channel_index;
+/*@	requires 0 <= wifi_channel_index < NUM_WIFI_CHANNELS;
+ 	ensures 0 <= wifi_channel_index < NUM_WIFI_CHANNELS;
+   	ensures self->frequency == self->frequency_range[wifi_channel_index];
+   	ensures self->auto_hopping <==> wifi_channel_index != \old(wifi_channel_index);
+   	assigns self->frequency, wifi_channel_index;
  */
 void update_monitored_frequency(){
 	if(auto_hopping()){
@@ -310,10 +318,10 @@ void update_monitored_frequency(){
 
 };
 
-/*@ ensures ensures the_qubie.observations.size == \old(the_qubie.observations.size) + 1;
+/*@ ensures the_qubie.observations.size == \old(the_qubie.observations.size) + 1;
    	ensures (the_last_contact_record.rssi == the_signal_strength) && (the_last_contact_record.frequency == the_frequency);
-   	ensures logical_logged(WIFI_MONITOR_DETECTED_DEVICE, {the_mac_address, the_signal_strength});
-   	assigns qubie.observations, qubie.log;
+   	ensures logical_logged(QUBIE_DETECTED_DEVICE, (void *){the_mac_address, the_signal_strength});
+   	assigns the_qubie.observations, the_qubie.log;
  */
 void report_detected_device(
 		mac_t the_mac_address,
@@ -329,7 +337,7 @@ void report_detected_device(
 };
 
 //design message is null terminated and the length is no more than MAX_MESSAGE_LEN - 100 (to leave room for additional text)
-/*@	requires \exist int i; 0<=i < MAX_MESSAGE_LEN - 100 && \valid(message[i]);
+/*@	requires \exists int i; 0<=i < MAX_MESSAGE_LEN - 100 && message[i]==0;
    	ensures logical_logged(WIFI_MONITOR_UNSUPPORTED_PACKET, message);
    	assigns the_qubie.log;
  */
@@ -340,7 +348,7 @@ void report_unsupported_packet(char * message){
 
 /*@ requires the_logical_wifi_monitor_state == MONITOR_RUNNING;
    	ensures wifi_monitor_polled;
-   assigns wifi_monitor_polled;
+   assigns \nothing;
  */
 void poll_wifi_monitor(){
 	__poll_wifi_interface();

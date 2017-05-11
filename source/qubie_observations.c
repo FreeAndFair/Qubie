@@ -1,11 +1,12 @@
 //implementation summary of qubie observations and contact records
 
-#include "qubie.h"
 #include "qubie_defaults.h"
+#include "qubie.h"
+#include "qubie.acsl"
 #include "qubie_observations.h"
 #include "qubie_log.h"
 #include "qubie_keyed_hash.h"
-#include <sodium.h> //design for converting mac/key arrays to strings with rawToChar
+//#include <sodium.h> //design for converting mac/key arrays to strings with rawToChar
 #include <stddef.h>
 #include <stdbool.h>
 #include <stdlib.h>
@@ -67,9 +68,9 @@ contact_record_t make_contact_record( device_id_t const device_id,
 	return *contact_record_struct;
 };
 /*@
-   requires !ENCRYPTED_DEFAULT ==> TEST_MODE
+   requires !ENCRYPTED_DEFAULT ==> TEST_MODE;
    //TODO ensures identifier_string is created from raw_identifier
-   assigns \nothing
+   assigns \nothing;
  */
 device_id_t make_device_id(mac_t raw_identifier){
 	device_id_t *device_id_struct = malloc(sizeof(struct device_id));
@@ -101,12 +102,11 @@ bool observations_empty(){
 //design this function is never used. it is only to fulfill a contract.
 //TODO remove once predicate logical_observations_contains is verified
 /*@
-   	ensures \result == the_last_contact_record;
+   	ensures \result <==> logical_observations_contains(the_contact_record);
    	assigns \nothing;
 
  */
 bool observations_contains( contact_record_t the_contact_record){
-	//@assert(false)
 	assert(false);
 	return(false);
 };
@@ -114,10 +114,10 @@ bool observations_contains( contact_record_t the_contact_record){
 
 
 
-/*@ requires self->size +1 < MAX_OBSERVATIONS_SIZE;
+/*@
    	ensures \old(self->size) + 1 == self->size;
    	ensures the_last_contact_record == the_contact_record;
-   	assigns the_last_contact_record;
+   	assigns \nothing;
  */
 void add_contact_record( contact_record_t the_contact_record){
 	//free_contact_record(self.last);

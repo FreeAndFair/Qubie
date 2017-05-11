@@ -1,5 +1,6 @@
 //implementation summary of qubie scenarios
 #include "qubie_t.h"
+#include "qubie.acsl"
 #include "qubie_main.h"
 #include "qubie.h"
 #include "qubie_wifi_monitor.h"
@@ -15,8 +16,9 @@ extern bt_client_t the_bt_client;
 //helper functions
 // design to init pseudo random test seeds.
 // design does not effect hash key. NOT SECURE FOR HASH KEY SEEDS!!!
-/*@	requires !randoms_initiated
-   ensures randoms_initiated
+/*@	requires !randoms_initiated;
+   	ensures randoms_initiated;
+   	assigns \nothing;
  */
 void init_random_number_generator(){
 	unsigned long seed;

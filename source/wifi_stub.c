@@ -1,5 +1,6 @@
 
 #include "qubie_t.h"
+#include "qubie.acsl"
 #include "qubie.h"
 #include "qubie_wifi_monitor.h"
 #include "qubie_bt_client.h"
@@ -31,8 +32,8 @@ void __print_byte_array(char *title, const unsigned char *arr, const uint size )
 };
 
 
-/* @requires pcap_closed
-   @ensures pcap_open
+/* requires pcap_closed;
+   ensures pcap_open;
  */
 int qubie_pcap_init(){
 	char *dev;			/* The device to sniff on */
@@ -91,7 +92,7 @@ int qubie_pcap_init_from_file(){
 };
 
 
-//@requires pcap_open
+//requires pcap_open;
 int qubie_pcap_get_packet(){
 	/* Grab a packet */
 	struct pcap_pkthdr header;	/* The header that pcap gives us */
@@ -170,15 +171,15 @@ int qubie_pcap_get_packet(){
 	return(0);
 };
 
-/* @requrires pcap_open
-   @ensures pcap_closed
+/* requrires pcap_open;
+   ensures pcap_closed;
  */
 void qubie_pcap_close(){
 	pcap_close(handle);
 };
 
 
-/*@	requires running()
+/*	requires running
    //TODO ensures wifi_monitor and bt_client are polled
    ensures state > running;
  */

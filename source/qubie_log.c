@@ -1,8 +1,9 @@
 //qubie log module implementation summary
 
 #include "qubie_t.h"
+#include "qubie.acsl"
 #include "qubie_log.h"
-#include <sodium.h>
+//#include <sodium.h>
 #include <time.h>// TODO take only what is needed from this library
 #include <assert.h>
 #include <string.h>
@@ -22,7 +23,7 @@ void __write_log_entry_to_file( log_entry_t the_entry){
 
 
 //constructors
-/*@ requires \valid(message_val);
+/*@ //requires \valid(message_val);
    	ensures \valid_read(\result);
    	assigns \nothing;
  */
@@ -64,8 +65,8 @@ char const *make_log_message(message_t message_type, void *message_val, qubie_ti
 	return (char const *)buff;
 };
 
-/*@ requires \valid(message_val);
-   	ensures \valid_read(\result);
+/*@ //requires \valid(message_val);
+   	//ensures \valid_read(\result);
    	assigns \nothing;
  */
 log_entry_t make_log_entry(message_t message_type, void* message_val){
@@ -98,8 +99,8 @@ bool log_empty(){
 	return 0==self->size;
 };
 
-/*@	design this method is only for defining contracts
-   requires \valid(message_val);
+/*@	//design this method is only for defining contracts
+   //requires \valid(message_val);
    ensures \result == ((the_last_log_entry_message_type == message_type)
    					&& (the_last_log_entry_message_val == message_val));
    	assigns \nothing;
@@ -123,11 +124,11 @@ qubie_time_t current_time(qubie_time_t *seconds){
 // ====================================================================
 
 
-/*@ requires \valid(message_val);
+/*@ //requires \valid(message_val);
    	ensures the_last_log_entry_message_type == message_type;
    	ensures the_last_log_entry_message_val == message_val;
 
-   	assigns the_last_log_entry_message_type, the_last_log_entry_message_val;
+   	assigns \nothing;
  */
 void add_log_entry( message_t message_type, void* message_val){
 	log_entry_t the_entry = make_log_entry(message_type, message_val);
