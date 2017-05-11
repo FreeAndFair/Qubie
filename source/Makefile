@@ -1,6 +1,6 @@
 CC=gcc
 CFLAGS=$(pkg-config --cflags libsodium)  -Wall 
-LDFLAGS=$(pkg-config --libs libsodium) -lsodium -lpcap
+LDFLAGS=$(pkg-config --libs libsodium) -lsodium -lpcap -D PCAP_DONT_INCLUDE_PCAP_BPF_H
 SYSTEM = qubie
 NFORMAL_BON_FILES = $(SYSTEM)-domain-model.bon
 STATIC_MODEL_FILES = $(SYSTEM)_static_model.bon
@@ -14,6 +14,9 @@ STUB_FILES = qubie_bt_client.c qubie_bt_client.h wifi_stub.h wifi_stub.c
 REQUIREMENTS = 
 BON_FILES =  $(INFORMAL_BON_FILES) $(FORMAL_BON_FILES) $(REQUIREMENTS)
 
+FRAMA_C_FLAGS = -lib-entry -c11   $(SOURCE_FILES) $(STUB_FILES) \
+					-cpp-extra-args="  $(CFLAGS) $(LDFLAGS) -I includes"
+
 .PHONY: all clean  \
 	typecheck typecheck-consistency \
 	typecheck-informal typecheck-formal \
@@ -25,28 +28,28 @@ main: $(SOURCE_FILES) $(STUB_FILES)
 	$(CC) $(CFLAGS) -o $(SYSTEM)_main  $(SOURCE_FILES) $(STUB_FILES)  $(LDFLAGS) 
 
 typecheck:
-	frama-c -lib-entry -c11 -cpp-extra-args="$(CFLAGS) $(LDFLAGS)"  $(SOURCE_FILES) $(STUB_FILES) 
-
-wp:
-	frama-c -lib-entry -c11 -wp -wp-rte $(SOURCE_FILES) $(STUB_FILES)
-
-wp-verbose-report:
-	frama-c -lib-entry -c11 -wp-verbose 0 $(SOURCE_FILES) $(STUB_FILES) -then -report 
-
-wp-all-provers:
-	frama-c -lib-entry -c11 -wp -wp-rte -wp-prover cvc4,z3,yices,alt-ergo $(SOURCE_FILES) $(STUB_FILES)
-
-aorai:
-	frama-c -lib-entry -c11 software.c -aorai-automata ../specs/software.ya
+	frama-c  $(FRAMA_C_FLAGS)
 
 metrics:
-	frama-c -lib-entry -c11 -metrics $(SOURCE_FILES) $(STUB_FILES)
+	frama-c -metrics $(FRAMA_C_FLAGS)
 
 value:
-	frama-c -c11 -val $(SOURCE_FILES) $(STUB_FILES)
+	frama-c -val $(FRAMA_C_FLAGS)
+
+wp:
+	frama-c  -wp -wp-rte $(FRAMA_C_FLAGS)
+
+wp-verbose-report:
+	frama-c  -wp-verbose 0 $(FRAMA_C_FLAGS) -then -report 
+
+wp-all-provers:
+	frama-c  -wp -wp-rte -wp-prover cvc4,z3,yices,alt-ergo $(FRAMA_C_FLAGS)
+
+aorai:
+	frama-c $(FRAMA_C_FLAGS) -aorai-automata ../specs/$(SYSTEM).ya
 
 gui:
-	frama-c-gui -lib-entry -c11 $(SOURCE_FILES) $(STUB_FILES)
+	frama-c-gui  $(FRAMA_C_FLAGS)
 
 typecheck-bonc: typecheck-informal typecheck-formal \
 	typecheck-static typecheck-dynamic typecheck-consistency
