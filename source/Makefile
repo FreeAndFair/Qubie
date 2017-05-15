@@ -33,6 +33,9 @@ typecheck:
 metrics:
 	frama-c -metrics $(FRAMA_C_FLAGS)
 
+metrics-by-function:
+	frama-c -metrics -metrics-by-function $(FRAMA_C_FLAGS)
+
 value:
 	frama-c -val $(FRAMA_C_FLAGS)
 

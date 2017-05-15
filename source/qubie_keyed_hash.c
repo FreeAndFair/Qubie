@@ -15,7 +15,8 @@ static keyed_hash_t *self = &the_qubie.wifi_monitor.keyed_hash;
 //helper functions
 
 //TODO ensures Result is an exact string representation of the binary
-/*@ requires \valid_read(the_binary + (0 .. num_bytes));
+/*@	requires  num_bytes == MAC_SIZE;
+  	requires \valid_read(the_binary + (0 .. num_bytes));
    	ensures \valid_read(\result + (0 .. num_bytes * 2 +1));
    	assigns \nothing;
  */
@@ -25,12 +26,19 @@ char * const __binToString(unsigned char * the_binary, const size_t num_bytes){
 	char *string_ptr = the_string;
 	unsigned char * binary_ptr = the_binary;
 	//*(string_ptr+num_bytes) = '\0';
+	/*@	loop invariant 0<= i < num_bytes;
+	 	loop invariant \at(string_ptr,Pre) +2*i == string_ptr;
+	 	loop invariant \at(binary_ptr,Pre) +i == binary_ptr;
+	 	loop variant num_bytes - i;
+	 */
 	for (int i = 0; i < num_bytes; i++)
 	{
-		string_ptr += sprintf(string_ptr, "%02X", (unsigned int)*(binary_ptr++));
+		sprintf(string_ptr, "%02X", (unsigned int)*(binary_ptr));
+		string_ptr += 2;
+		binary_ptr+=1;
 	}
 	*(string_ptr+1) = '\0';
-	printf("DEBUG - __binToString result: %s\n", the_string);
+	//printf("DEBUG - __binToString result: %s\n", the_string);
 	return (char * const)the_string;
 };
 

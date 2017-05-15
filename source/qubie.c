@@ -235,12 +235,12 @@ void stop_running(){
 void power_off(){
 	__set_and_publish(POWERED_OFF);
 	//TBD move cleanup code to the relevant modules.
-	if(the_qubie.log.log_fp) {
+	//if(the_qubie.log.log_fp) {
 		fclose(the_qubie.log.log_fp);
-	}
-	if(the_qubie.observations.observations_fp) {
+	//}
+	//if(the_qubie.observations.observations_fp) {
 		fclose(the_qubie.observations.observations_fp);
-	}
+	//}
 };
 
 /*@	requires (the_qubie_state == START);
