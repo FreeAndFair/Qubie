@@ -16,21 +16,21 @@
 
 //globals
 extern qubie_t the_qubie;
-static qubie_observations_t *self = &the_qubie.observations;
+//static qubie_observations_t *self = &the_qubie.observations;
 
 //helper functions
 //design format: device,time,rssi,frequency
 /*@ ensures the_last_contact_record == the_contact_record;
-   	assigns *self->observations_fp;
+   	assigns *the_qubie.observations.observations_fp;
  */
 void __write_contact_record_to_file( contact_record_t the_contact_record){
-	fprintf(self->observations_fp, "%s,%lu,%d,%d\n",
+	fprintf(the_qubie.observations.observations_fp, "%s,%lu,%d,%d\n",
 			the_contact_record.device_id.identifier_string,
 			the_contact_record.contact_time,
 			the_contact_record.rssi,
 			the_contact_record.frequency
 			);
-	fflush(self->observations_fp);
+	fflush(the_qubie.observations.observations_fp);
 };
 
 //constructors
@@ -90,12 +90,12 @@ device_id_t make_device_id(mac_t raw_identifier){
 // @bon QUERIES
 // ====================================================================
 
-/*@ ensures (0 == self->size) == \result;
+/*@ ensures (0 == the_qubie.observations.size) == \result;
    	assigns \nothing;
  */
 bool observations_empty(){
 	//assumes linked list format
-	return 0 == self->size;
+	return 0 == the_qubie.observations.size;
 };
 
 
@@ -115,7 +115,7 @@ bool observations_contains( contact_record_t the_contact_record){
 
 
 /*@
-   	ensures \old(self->size) + 1 == self->size;
+   	ensures \old(the_qubie.observations.size) + 1 == the_qubie.observations.size;
    	ensures the_last_contact_record == the_contact_record;
    	assigns \nothing;
  */
@@ -123,7 +123,7 @@ void add_contact_record( contact_record_t the_contact_record){
 	//free_contact_record(self.last);
 	//self.last = the_contact_record;
 	__write_contact_record_to_file(the_contact_record);
-	self->size++;
+	the_qubie.observations.size++;
 };
 
 

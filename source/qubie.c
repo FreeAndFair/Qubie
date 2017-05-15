@@ -61,7 +61,9 @@ void __set_and_publish( state_t new_state){
 
 /*@
    requires !logical_initialized;
+   requires the_qubie.log.log_fp == \null && the_qubie.observations.observations_fp == \null;
    ensures logical_initialized;
+   ensures \valid_read(the_qubie.observations.observations_fp) && \valid_read(the_qubie.observations.observations_fp);
    assigns \nothing;
  */
 void __initialize_qubie(){
@@ -265,7 +267,8 @@ void shut_down(){
 };
 
 //TODO define qubie_legal_update_state(the_state)
-/*@ requires the_state == STOPPED || the_state == POWERED_OFF;
+/*@ requires (the_qubie_state == RUNNING && the_state == STOPPED) ||
+ 	 	 	 (the_qubie_state != POWERED_OFF &&the_state == POWERED_OFF);
    	ensures the_qubie_state == the_state;
    	assigns \nothing;
  */
@@ -293,7 +296,7 @@ void qubie_publish_action( state_t the_state){
 
 /*@ ensures logical_observations_contains(*contact_record_ptr);
    	ensures logical_logged(QUBIE_DETECTED_DEVICE, contact_record_ptr);
-   	assigns the_qubie.log, the_qubie.observations;
+   	assigns \nothing;
  */
 void record_observation( contact_record_t *contact_record_ptr){
 	//design the contract record belongs to observations which will eventually free the memory
@@ -310,7 +313,9 @@ void record_observation( contact_record_t *contact_record_ptr){
  */
 void run_loop(){
 	unsigned long iterations = 0;
-	/*@	loop invariant 0<=iterations<MAX_TEST_ITERATIONS;
+	/*@
+	  	loop assigns iterations;
+	  	loop invariant 0<=iterations<MAX_TEST_ITERATIONS;
 	  	loop invariant the_qubie_state == RUNNING;
 	  	loop variant MAX_TEST_ITERATIONS - iterations;
 	 */

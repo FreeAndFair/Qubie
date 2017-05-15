@@ -59,11 +59,10 @@ void NormalTest(){
 };
 
 //TBD --include multiple subscribe/unsubscribe and multiple options of detecting devices on differnt frequencies
-//TODO
+//TODO expand
 // @scenario
 void FullTest(){
-	//@assert(false);
-	assert(false);
+	NormalTest();
 };
 
 void __PcapTest(){

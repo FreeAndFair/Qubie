@@ -212,7 +212,7 @@ void pcap_test(){
 /*@	requires randoms_initiated;
    	requires TEST_MODE;
    	ensures the_qubie.observations.size == \old(the_qubie.observations.size) + 1;
-   	assigns the_qubie.observations, the_qubie.log;
+   	assigns \nothing;
  */
 void report_random_device(){
 	assert(TEST_MODE);

@@ -10,15 +10,15 @@
 
 //globals
 extern qubie_t the_qubie;
-static qubie_logger_t *self = &the_qubie.log;
+//static qubie_logger_t *self = &the_qubie.log;
 
 //helper functions
-/*@	requires \valid(self->log_fp);
-   	assigns *self->log_fp;
+/*@	requires \valid(the_qubie.log.log_fp);
+   	assigns *the_qubie.log.log_fp;
  */
 void __write_log_entry_to_file( log_entry_t the_entry){
-	fprintf(self->log_fp, "%s\n", the_entry.message);
-	fflush(self->log_fp);
+	fprintf(the_qubie.log.log_fp, "%s\n", the_entry.message);
+	fflush(the_qubie.log.log_fp);
 };
 
 
@@ -92,11 +92,11 @@ qubie_logger_t make_qubie_logger(const char* filename){
 // @bon QUERIES
 // ====================================================================
 
-/*@ ensures (0 == self->size) == \result;
+/*@ ensures (0 == the_qubie.log.size) == \result;
    	assigns \nothing;
  */
 bool log_empty(){
-	return 0==self->size;
+	return 0==the_qubie.log.size;
 };
 
 /*@	//design this method is only for defining contracts
@@ -108,9 +108,9 @@ bool log_empty(){
 bool logged( message_t message_type, void* message_val){
 	//@assert(false);
 	assert(false);
-	//return (self->last_entry) &&
-	//		(message_type == self->last_entry->message_type) &&
-	//		(message_val == self->last_entry->message_val);
+	//return (the_qubie.log.last_entry) &&
+	//		(message_type == the_qubie.log.last_entry->message_type) &&
+	//		(message_val == the_qubie.log.last_entry->message_val);
 	return false;
 };
 
@@ -133,8 +133,8 @@ qubie_time_t current_time(qubie_time_t *seconds){
 void add_log_entry( message_t message_type, void* message_val){
 	log_entry_t the_entry = make_log_entry(message_type, message_val);
 	__write_log_entry_to_file(the_entry);
-	//free_log_entry(self->last_entry);
-	//self->last_entry = the_entry;
+	//free_log_entry(the_qubie.log.last_entry);
+	//the_qubie.log.last_entry = the_entry;
 };
 
 
