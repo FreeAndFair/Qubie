@@ -291,15 +291,15 @@ void qubie_publish_action( state_t the_state){
 	bt_communicator_publish_action(the_state);
 };
 
-/*@ ensures logical_observations_contains(the_contact_record);
-   	ensures logical_logged(QUBIE_DETECTED_DEVICE, &the_contact_record);
+/*@ ensures logical_observations_contains(*contact_record_ptr);
+   	ensures logical_logged(QUBIE_DETECTED_DEVICE, contact_record_ptr);
    	assigns the_qubie.log, the_qubie.observations;
  */
-void record_observation( contact_record_t the_contact_record){
+void record_observation( contact_record_t *contact_record_ptr){
 	//design the contract record belongs to observations which will eventually free the memory
 	//log the data from the log entry first, while it is certain to exist.
-	add_log_entry(QUBIE_DETECTED_DEVICE, &the_contact_record);
-	add_contact_record(the_contact_record);
+	add_log_entry(QUBIE_DETECTED_DEVICE, (void *)contact_record_ptr);
+	add_contact_record(*contact_record_ptr);
 };
 
 

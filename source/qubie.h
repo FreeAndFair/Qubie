@@ -108,7 +108,7 @@ void qubie_publish_action( state_t the_state);
  * 	ensures log.logged()
  */
 //delta {observations, log}
-void record_observation( contact_record_t the_contact_record);
+void record_observation( contact_record_t *contact_record_ptr);
 
 
 /* requires running()

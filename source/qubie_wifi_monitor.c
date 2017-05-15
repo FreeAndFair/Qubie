@@ -331,9 +331,9 @@ void report_detected_device(
 	//printf("DEBUG - making device id\n");
 	device_id_t the_device_id = make_device_id(the_mac_address);
 	//printf("DEBUG - making contact record\n");
-	contact_record_t the_contact_record = make_contact_record(the_device_id, current_time(NULL), the_signal_strength, the_frequency);
+	contact_record_t *contact_record_ptr = make_contact_record(the_device_id, current_time(NULL), the_signal_strength, the_frequency);
 	//printf("DEBUG - recording observation\n");
-	record_observation(the_contact_record);
+	record_observation(contact_record_ptr);
 };
 
 //design message is null terminated and the length is no more than MAX_MESSAGE_LEN - 100 (to leave room for additional text)

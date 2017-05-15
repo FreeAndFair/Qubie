@@ -15,29 +15,33 @@ static keyed_hash_t *self = &the_qubie.wifi_monitor.keyed_hash;
 //helper functions
 
 //TODO ensures Result is an exact string representation of the binary
-/*@	requires  num_bytes == MAC_SIZE;
-  	requires \valid_read(the_binary + (0 .. num_bytes));
-   	ensures \valid_read(\result + (0 .. num_bytes * 2 +1));
+/*@
+  	requires \valid_read(the_binary + (0 .. MAC_SIZE));
+   	ensures \valid_read(\result + (0 .. MAC_STRING_LEN));
    	assigns \nothing;
  */
-char * const __binToString(unsigned char * the_binary, const size_t num_bytes){
-	const size_t string_max_length = num_bytes * 2 +1;
-	char * the_string = (char *)malloc(string_max_length);
-	char *string_ptr = the_string;
-	unsigned char * binary_ptr = the_binary;
+char * const __binToString(unsigned char * the_binary){
+	//const size_t string_max_length = num_bytes * 2 +1;
+	char * the_string = (char *)malloc(MAC_STRING_LEN);
+	char ascii_array[17] = "0123456789ABCDEF";
+	//char *string_ptr = the_string;
+	//unsigned char * binary_ptr = the_binary;
 	//*(string_ptr+num_bytes) = '\0';
-	/*@	loop invariant 0<= i < num_bytes;
-	 	loop invariant \at(string_ptr,Pre) +2*i == string_ptr;
-	 	loop invariant \at(binary_ptr,Pre) +i == binary_ptr;
-	 	loop variant num_bytes - i;
+	/*@	loop invariant 0<= i < MAC_SIZE;
+	 	//loop invariant \at(string_ptr,Pre) +2*i == string_ptr;
+	 	//loop invariant \at(binary_ptr,Pre) +i == binary_ptr;
+	 	loop variant MAC_SIZE - i;
 	 */
-	for (int i = 0; i < num_bytes; i++)
+	for (int i = 0; i < MAC_SIZE; i++)
 	{
-		sprintf(string_ptr, "%02X", (unsigned int)*(binary_ptr));
-		string_ptr += 2;
-		binary_ptr+=1;
+		//sprintf(the_string[2*i], "%02X", the_binary[i]);
+		the_string[2*i] = ascii_array[the_binary[i]>>4];
+		the_string[2*i+1] = ascii_array[the_binary[i] & 0xF];
+		//string_ptr += 2;
+		//binary_ptr+=1;
 	}
-	*(string_ptr+1) = '\0';
+	//*(string_ptr+1) = '\0';
+	the_string[MAC_STRING_LEN - 1] = '\0';
 	//printf("DEBUG - __binToString result: %s\n", the_string);
 	return (char * const)the_string;
 };
@@ -68,6 +72,12 @@ bool set(){
 //	return &self->key;
 //};
 
+
+void __crypto_generichash( unsigned char *mac_buf, mac_t the_string){
+	crypto_generichash(mac_buf, MAC_SIZE, the_string, MAC_SIZE, (const unsigned char *)self->key, KEY_SIZE);
+};
+
+
 //TODO ensures hash.hash(the_string) == Result;
 /*@ requires self->set;
    	ensures \valid_read(\result + (0 .. MAC_STRING_LEN));
@@ -79,16 +89,22 @@ char const *hashed_string( bool encrypted, mac_t the_string){
 	if(encrypted) {
 		//design// TBD keep a single static buffer instead of allocating and freeing every time.
 		mac_buf = malloc(sizeof(mac_t) * MAC_SIZE);
-		crypto_generichash(mac_buf, MAC_SIZE, the_string, MAC_SIZE, (const unsigned char *)self->key, KEY_SIZE);
-		string_ptr = __binToString(mac_buf, MAC_SIZE);
+		__crypto_generichash(mac_buf, the_string);
+		//crypto_generichash(mac_buf, MAC_SIZE, the_string, MAC_SIZE, (const unsigned char *)self->key, KEY_SIZE);
+		string_ptr = __binToString(mac_buf);
 		free(mac_buf);
 	} else {
-		string_ptr = __binToString((unsigned char *)the_string, MAC_SIZE);
+		string_ptr = __binToString((unsigned char *)the_string);
 	}
 	return string_ptr;
 };
 
-//implemetned with libsodium
+// calls function from sodium.h
+void __randombytes_buf(qubie_key_t * key_buf){
+	randombytes_buf((void *)key_buf, (const size_t)KEY_SIZE);
+};
+
+//implemented with libsodium
 /*@ requires true;
    	ensures \valid_read(\result + (0 .. KEY_SIZE));
    	assigns \nothing;
@@ -98,8 +114,8 @@ qubie_key_t *create_random_key(){
 	printf("DEBUG - sodium_init return val: %d\n", sodium_init_ret);
 	//@assert(!sodium_init_ret);
 	assert(!sodium_init_ret);
-	qubie_key_t *key_buf = malloc(sizeof(qubie_key_t) * KEY_SIZE);
-	randombytes_buf((void *)key_buf, (const size_t)KEY_SIZE);
+	qubie_key_t *key_buf = malloc(sizeof(qubie_key_t));
+	__randombytes_buf(key_buf);
 	return key_buf;
 };
 

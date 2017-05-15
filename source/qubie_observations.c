@@ -47,13 +47,13 @@ qubie_observations_t make_qubie_observations(const char *filename){
 };
 
 /*@ requires true;
-   	ensures \result.device_id == device_id;
-   	ensures \result.contact_time == contact_time;
-   	ensures \result.rssi == rssi;
-   	ensures \result.frequency == frequency;
+   	ensures \result->device_id == device_id;
+   	ensures \result->contact_time == contact_time;
+   	ensures \result->rssi == rssi;
+   	ensures \result->frequency == frequency;
    	assigns \nothing;
  */
-contact_record_t make_contact_record( device_id_t const device_id,
+contact_record_t *make_contact_record( device_id_t const device_id,
 								qubie_time_t const contact_time,
 								const rssi_t rssi,
 								const frequency_t frequency
@@ -65,7 +65,7 @@ contact_record_t make_contact_record( device_id_t const device_id,
 	*(qubie_time_t *)&contact_record_struct->contact_time = contact_time;
 	*(rssi_t *)&contact_record_struct->rssi = rssi;
 	*(frequency_t *)&contact_record_struct->frequency = frequency;
-	return *contact_record_struct;
+	return contact_record_struct;
 };
 /*@
    requires !ENCRYPTED_DEFAULT ==> TEST_MODE;
