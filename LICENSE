@@ -1,19 +1,20 @@
-Copyright (C) 2015-17, Free & Fair, except as otherwise indicated in individual files.
+Copyright (C) 2015-17, Free & Fair, except as otherwise indicated in individual
+files.
 
-Some of the contents of this repository may have originally been written as student work 
-on BSc, MSc, and PhD theses projects supervised by Joseph Kiniry or Daniel Zimmerman and 
-made publicly available, as indicated in individual files. Copyright in student work is 
-retained by its original authors.
+Some of the contents of this repository may have originally been written as 
+student work on BSc, MSc, and PhD theses projects supervised by Joseph Kiniry or 
+Daniel Zimmerman and made publicly available, as indicated in individual files. 
+Copyright in student work is retained by its original authors.
 
-Free & Fair provides all other contents of this repository under a dual license model 
-designed to meet the needs of both government entities and commercial users. Government 
-entities running legally mandated elections have the option to license Free & Fair's 
-products under a 3-clause BSD license. For all other users and purposes, Free & Fair's 
-products are licensed under the GNU General Public License, Version 3. The text of both 
-licenses appears below.
+Free & Fair provides all other contents of this repository under a dual license 
+model designed to meet the needs of both government entities and commercial 
+users. Government entities running legally mandated elections have the option to 
+license Free & Fair's products under a 3-clause BSD license. For all other users 
+and purposes, Free & Fair's products are licensed under the GNU General Public
+License, Version 3. The text of both licenses appears below.
 
-For inquiries regarding custom licenses or questions about this dual license model, 
-please contact Free & Fair at licensing@freeandfair.us.
+For inquiries regarding custom licenses or questions about this dual license 
+model, please contact Free & Fair at licensing@freeandfair.us.
 
 
 3-clause BSD License
@@ -29,9 +30,9 @@ modification, are permitted provided that the following conditions are met:
   this list of conditions and the following disclaimer in the documentation
   and/or other materials provided with the distribution.
 
-* Neither the name of this product, nor the name of Free & Fair, nor the names of its 
-  contributors may be used to endorse or promote products derived from this software 
-  without specific prior written permission.
+* Neither the name of this product, nor the name of Free & Fair, nor the names
+  of its contributors may be used to endorse or promote products derived from 
+  this software without specific prior written permission.
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -722,3 +723,4 @@ may consider it more useful to permit linking proprietary applications with
 the library.  If this is what you want to do, use the GNU Lesser General
 Public License instead of this License.  But first, please read
 <http://www.gnu.org/philosophy/why-not-lgpl.html>.
+
