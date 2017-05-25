@@ -12,11 +12,11 @@ wifi_monitor_t make_wifi_monitor(qubie_t *qubie);
 // bon QUERIES
 // ====================================================================
 
-bool wifi_booted();
-bool wifi_running();
+bool monitor_booted();
+bool monitor_running();
 bool auto_hopping();
 keyed_hash_t *keyed_hash();
-const frequency_t* frequency_range();
+const frequency_t* channels();
 frequency_t frequency();
 // moved to central location: qubie_t qubie();
 
@@ -28,22 +28,22 @@ frequency_t frequency();
  * ensures booted
  * ensures keyed_hash.set();
  * ensures qubie.log.logged(WIFI_MONITOR_STATE, "booted")
- * TODO ensures frequency in frequency_range
+ * TODO ensures frequency in channels
  */
-void boot_wifi();
+void boot_monitor();
 
 /* requires booted
  * 	requires !running
  * 	ensures running
  * 	ensures qubie.log.logged(WIFI_MONITOR_STATE, "running")
  */
-void start_wifi();
+void start_monitor();
 
 /* requires running
  * 	ensures !running
  * 	ensures qubie.log.logged(WIFI_MONITOR_STATE, "stopped")
  */
-void stop_wifi();
+void stop_monitor();
 
 /* ensures frequency==the_frequency;
  * 	ensures qubie.log.logged(WIFI_MONITOR_FREQUENCY, the_frequency)

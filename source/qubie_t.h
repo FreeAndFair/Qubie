@@ -111,11 +111,11 @@ typedef struct bt_client bt_client_t;
 typedef struct qubie qubie_t;
 
 typedef struct wifi_monitor {
-	bool wifi_booted;
-	bool wifi_running;
+	bool monitor_booted;
+	bool monitor_running;
 	bool auto_hopping;
 	keyed_hash_t keyed_hash;
-	frequency_t const frequency_range[NUM_WIFI_CHANNELS]; // FREQUENCY_WIFI_CHANNELS;
+	frequency_t const channels[NUM_WIFI_CHANNELS]; // FREQUENCY_WIFI_CHANNELS;
 	frequency_t frequency; // WIFI_FREQUENCY_DEFAULT;
 	//const qubie_t const *qubie; //pointer to qubie
 } wifi_monitor_t;

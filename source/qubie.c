@@ -28,13 +28,13 @@ qubie_t the_qubie = {
 				.log_fp = NULL //fopen("qubie_log.txt","w")
 		},
 		.wifi_monitor = {
-				.wifi_booted = false,
-				.wifi_running = false,
+				.monitor_booted = false,
+				.monitor_running = false,
 				.auto_hopping = WIFI_AUTO_HOPPING_DEFAULT,
 				.keyed_hash = {
 					.set = false
 				},
-				.frequency_range = FREQUENCY_WIFI_CHANNELS
+				.channels = FREQUENCY_WIFI_CHANNELS
 				//design frequency field will be initialized in boot stage
 		},
 		.bt_communicator = {
@@ -204,7 +204,7 @@ void power_on(){
     assigns \nothing;
  */
 void start_booting(){
-	boot_wifi();
+	boot_monitor();
 	//TBD is action needed for bt_communicator?
 	__set_and_publish(BOOTING);
 };
@@ -215,7 +215,7 @@ void start_booting(){
     assigns \nothing;
  */
 void start_running(){
-	start_wifi();
+	start_monitor();
 	__set_and_publish(RUNNING);
 };
 
@@ -225,7 +225,7 @@ void start_running(){
     assigns \nothing;
  */
 void stop_running(){
-	stop_wifi();
+	stop_monitor();
 	__set_and_publish(STOPPED);
 };
 

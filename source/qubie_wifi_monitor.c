@@ -21,19 +21,19 @@ static unsigned int wifi_channel_index = WIFI_CHANNEL_DEFAULT;
 
 /*@
  	 global invariant the_logical_and_real_wifi_monitor_states:
- 	 	 	 	(the_logical_wifi_monitor_state == MONITOR_START <==> !the_qubie.wifi_monitor.wifi_running && !the_qubie.wifi_monitor.wifi_booted) &&
- 	 	 	 	(the_logical_wifi_monitor_state == MONITOR_BOOTED <==> !the_qubie.wifi_monitor.wifi_running && the_qubie.wifi_monitor.wifi_booted) &&
- 	 	 	 	(the_logical_wifi_monitor_state == MONITOR_BOOTED <==> the_qubie.wifi_monitor.wifi_running);
+ 	 	 	 	(the_logical_wifi_monitor_state == MONITOR_START <==> !the_qubie.wifi_monitor.monitor_running && !the_qubie.wifi_monitor.monitor_booted) &&
+ 	 	 	 	(the_logical_wifi_monitor_state == MONITOR_BOOTED <==> !the_qubie.wifi_monitor.monitor_running && the_qubie.wifi_monitor.monitor_booted) &&
+ 	 	 	 	(the_logical_wifi_monitor_state == MONITOR_BOOTED <==> the_qubie.wifi_monitor.monitor_running);
  */
 
 //constructor
 wifi_monitor_t make_wifi_monitor(qubie_t *qubie){
 	wifi_monitor_t *wifi_monitor_struct=malloc(sizeof(struct wifi_monitor));
-	wifi_monitor_struct->wifi_booted = false;
-	wifi_monitor_struct->wifi_running = false;
+	wifi_monitor_struct->monitor_booted = false;
+	wifi_monitor_struct->monitor_running = false;
 	wifi_monitor_struct->auto_hopping = WIFI_AUTO_HOPPING_DEFAULT;
 	wifi_monitor_struct->keyed_hash = make_keyed_hash();
-	//wifi_monitor_struct->frequency_range = wifi_channels;
+	//wifi_monitor_struct->channels = wifi_channels;
 	//design by default start at the begining of the spectrum
 	//wifi_monitor_struct->frequency = WIFI_FREQUENCY_DEFAULT;
 	//wifi_monitor_struct->qubie = qubie;
@@ -209,17 +209,17 @@ void __poll_wifi_interface(){
 // @bon QUERIES
 // ====================================================================
 
-/*@ ensures \result <==> (the_qubie.wifi_monitor.wifi_booted);
+/*@ ensures \result <==> (the_qubie.wifi_monitor.monitor_booted);
    	assigns \nothing;
  */
-bool wifi_booted(){
-	return the_qubie.wifi_monitor.wifi_booted;
+bool monitor_booted(){
+	return the_qubie.wifi_monitor.monitor_booted;
 };
-/*@ ensures \result <==> (the_qubie.wifi_monitor.wifi_running);
+/*@ ensures \result <==> (the_qubie.wifi_monitor.monitor_running);
    	assigns \nothing;
  */
-bool wifi_running(){
-	return the_qubie.wifi_monitor.wifi_running;
+bool monitor_running(){
+	return the_qubie.wifi_monitor.monitor_running;
 };
 //@ assigns \nothing;
 bool auto_hopping(){
@@ -229,11 +229,11 @@ bool auto_hopping(){
 keyed_hash_t *keyed_hash(){
 	return &the_qubie.wifi_monitor.keyed_hash;
 };
-/*@ requires \valid(the_qubie.wifi_monitor.frequency_range);
+/*@ requires \valid(the_qubie.wifi_monitor.channels);
    	assigns \nothing;
  */
-const frequency_t* frequency_range(){
-	return the_qubie.wifi_monitor.frequency_range;
+const frequency_t* channels(){
+	return the_qubie.wifi_monitor.channels;
 };
 //@ assigns \nothing;
 frequency_t frequency(){
@@ -249,29 +249,29 @@ frequency_t frequency(){
    ensures the_logical_wifi_monitor_state == MONITOR_BOOTED;
    ensures the_qubie.wifi_monitor.keyed_hash.set;
    ensures logical_logged(WIFI_MONITOR_STATE, "booted");
-   ensures the_qubie.wifi_monitor.frequency == the_qubie.wifi_monitor.frequency_range[wifi_channel_index];
-   assigns the_qubie.wifi_monitor.wifi_booted, the_qubie.wifi_monitor.frequency;
+   ensures the_qubie.wifi_monitor.frequency == the_qubie.wifi_monitor.channels[wifi_channel_index];
+   assigns the_qubie.wifi_monitor.monitor_booted, the_qubie.wifi_monitor.frequency;
  */
-void boot_wifi(){
+void boot_monitor(){
 	qubie_key_t *the_key = create_random_key();
 	set_key(the_key);
 	free(the_key);
-	the_qubie.wifi_monitor.frequency = the_qubie.wifi_monitor.frequency_range[wifi_channel_index];
+	the_qubie.wifi_monitor.frequency = the_qubie.wifi_monitor.channels[wifi_channel_index];
 //	TODO boot actual wifi device
 	__boot_wifi_interface();
 	add_log_entry(WIFI_MONITOR_STATE, (void *)"booted");
-	the_qubie.wifi_monitor.wifi_booted = true;
+	the_qubie.wifi_monitor.monitor_booted = true;
 };
 
 /*@ requires the_logical_wifi_monitor_state == MONITOR_BOOTED;
    	ensures the_logical_wifi_monitor_state == MONITOR_RUNNING;
    	ensures logical_logged(WIFI_MONITOR_STATE, "running");
-   	assigns the_qubie.wifi_monitor.wifi_running;
+   	assigns the_qubie.wifi_monitor.monitor_running;
  */
-void start_wifi(){
+void start_monitor(){
 //	TODO start actual wifi device
 	add_log_entry(WIFI_MONITOR_STATE, (void *)"running");
-	the_qubie.wifi_monitor.wifi_running = true;
+	the_qubie.wifi_monitor.monitor_running = true;
 };
 
 //design there is no difference between booted and stopped because both can lead to running (but are not currently running)
@@ -279,14 +279,14 @@ void start_wifi(){
    	ensures the_logical_wifi_monitor_state == MONITOR_START;
    	ensures !\valid(handle);
    	ensures logical_logged(WIFI_MONITOR_STATE, "stopped");
-   assigns handle, the_qubie.wifi_monitor.wifi_running, the_qubie.wifi_monitor.wifi_booted;
+   assigns handle, the_qubie.wifi_monitor.monitor_running, the_qubie.wifi_monitor.monitor_booted;
  */
-void stop_wifi(){
+void stop_monitor(){
 //	TODO stop actual wifi device
 	pcap_close(handle);
 	add_log_entry(WIFI_MONITOR_STATE, (void *)"stopped");
-	the_qubie.wifi_monitor.wifi_running = false;
-	the_qubie.wifi_monitor.wifi_booted = false;
+	the_qubie.wifi_monitor.monitor_running = false;
+	the_qubie.wifi_monitor.monitor_booted = false;
 };
 
 /*@ ensures the_qubie.wifi_monitor.frequency==the_frequency;
@@ -314,7 +314,7 @@ void set_auto_hopping( bool the_truth_val){
 //design circularly increment the channel index and set "the_frequency" according to the relevant channel
 /*@	requires 0 <= wifi_channel_index < NUM_WIFI_CHANNELS;
  	ensures 0 <= wifi_channel_index < NUM_WIFI_CHANNELS;
-   	ensures the_qubie.wifi_monitor.frequency == the_qubie.wifi_monitor.frequency_range[wifi_channel_index];
+   	ensures the_qubie.wifi_monitor.frequency == the_qubie.wifi_monitor.channels[wifi_channel_index];
    	behavior auto_hopping_on:
    		assumes the_qubie.wifi_monitor.auto_hopping;
    	   	ensures wifi_channel_index != \old(wifi_channel_index);
@@ -329,7 +329,7 @@ void set_auto_hopping( bool the_truth_val){
 void update_monitored_frequency(){
 	if(auto_hopping()){
 		wifi_channel_index = (wifi_channel_index + 1)% NUM_WIFI_CHANNELS;
-		set_frequency(frequency_range()[wifi_channel_index]);
+		set_frequency(channels()[wifi_channel_index]);
 	}
 
 };
