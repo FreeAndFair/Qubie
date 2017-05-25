@@ -17,15 +17,23 @@
 //globals
 //design must be synced to typedef enum {START, POWERED_ON, BOOTING, RUNNING, STOPPED, POWERED_OFF} state_t;
 static const char *state_strings[] = {"start", "powered on", "booting", "running", "stopped", "powered off"};
+extern qubie_observations_t the_observations;
 
+/*	Leior May 2016
+ * 	for the sake of simplicity and verifiability initialize as much of qubie
+ * 	as opssible including subcomponents.
+ * 	Additional initialization is done via helper function
+ * 	TODO find way to initialize subcomponents in their own files without doing
+ * 	complex pointer/address conversions in order to avoid problems with const fields
+ */
 qubie_t the_qubie = {
 		.observations = {
 				.size = 0,
-				.observations_fp = NULL //fopen("qubie_observations.csv", "w")// TODO init file with header
+				.observations_fp = NULL
 		},
-		.log = {   //make_qubie_logger("qubie_log.txt"),
+		.log = {
 				.size = 0,
-				.log_fp = NULL //fopen("qubie_log.txt","w")
+				.log_fp = NULL
 		},
 		.wifi_monitor = {
 				.monitor_booted = false,
@@ -79,17 +87,6 @@ void __initialize_qubie(){
 
 //constructor
 qubie_t *make_qubie(){
-	/* old settings @TODO remove
-	qubie_t *qubie_struct = malloc(sizeof(struct qubie));
-	qubie_observations_t observations = make_qubie_observations("qubie_observations.csv");
-	qubie_struct->state = POWERED_ON;
-	qubie_struct->log = make_qubie_logger("qubie_log.txt");
-	memcpy((qubie_observations_t *)&qubie_struct->observations, &observations, sizeof(struct observations));
-	//free(&observations);// TODO is this freed automatically when the function exists?
-	qubie_struct->wifi_monitor = make_wifi_monitor(qubie_struct);
-	qubie_struct->bt_communicator = make_bt_communicator(qubie_struct);
-	qubie_struct->legal_update_states = legal_update_states;
-	*/
 	__initialize_qubie();
 	return &the_qubie;
 };
@@ -170,18 +167,6 @@ bool stopped(){
 bool powered_off(){
 	return POWERED_OFF == the_qubie.state;
 };
-
-//design this should not be called it is only for the purpose of defining a contract
-/*@ ensures logical_published(the_state);
-   	assigns \nothing;
- */
-bool action_published( state_t the_state){
-	//@assert(false);
-	assert(false);
-	return logged(QUBIE_STATE , (void *)state_strings[the_state]) &&
-			bt_communicator_action_published( the_state);
-};
-
 
 // ====================================================================
 // @bon COMMANDS

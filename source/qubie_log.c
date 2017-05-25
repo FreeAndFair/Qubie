@@ -3,16 +3,15 @@
 #include "qubie_t.h"
 #include "qubie.acsl"
 #include "qubie_log.h"
-//#include <sodium.h>
-#include <time.h>// TODO take only what is needed from this library
+#include <time.h>
 #include <assert.h>
 #include <string.h>
 
 //globals
 extern qubie_t the_qubie;
-//static qubie_logger_t *self = &the_qubie.log;
 
 //helper functions
+
 /*@	requires \valid(the_qubie.log.log_fp);
    	assigns *the_qubie.log.log_fp;
  */
@@ -79,15 +78,6 @@ log_entry_t make_log_entry(message_t message_type, void* message_val){
 	return *log_entry_struct;
 };
 
-
-qubie_logger_t make_qubie_logger(const char* filename){
-	qubie_logger_t *qubie_logger_struct = malloc(sizeof(struct qubie_logger));
-	qubie_logger_struct->size = 0;
-	//qubie_logger_struct->last_entry=NULL;
-	qubie_logger_struct->log_fp = fopen(filename, "w");
-	return *qubie_logger_struct;
-};
-
 // ====================================================================
 // @bon QUERIES
 // ====================================================================
@@ -97,21 +87,6 @@ qubie_logger_t make_qubie_logger(const char* filename){
  */
 bool log_empty(){
 	return 0==the_qubie.log.size;
-};
-
-/*@	//design this method is only for defining contracts
-   //requires \valid(message_val);
-   ensures \result == ((the_last_log_entry_message_type == message_type)
-   					&& (the_last_log_entry_message_val == message_val));
-   	assigns \nothing;
- */
-bool logged( message_t message_type, void* message_val){
-	//@assert(false);
-	assert(false);
-	//return (the_qubie.log.last_entry) &&
-	//		(message_type == the_qubie.log.last_entry->message_type) &&
-	//		(message_val == the_qubie.log.last_entry->message_val);
-	return false;
 };
 
 //@ assigns \nothing;
@@ -127,14 +102,11 @@ time_t current_time(time_t *seconds){
 /*@ //requires \valid(message_val);
    	ensures the_last_log_entry_message_type == message_type;
    	ensures the_last_log_entry_message_val == message_val;
-
    	assigns \nothing;
  */
 void add_log_entry( message_t message_type, void* message_val){
 	log_entry_t the_entry = make_log_entry(message_type, message_val);
 	__write_log_entry_to_file(the_entry);
-	//free_log_entry(the_qubie.log.last_entry);
-	//the_qubie.log.last_entry = the_entry;
 };
 
 

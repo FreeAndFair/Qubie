@@ -14,7 +14,6 @@
 
 //globals
 extern qubie_t the_qubie;
-//static wifi_monitor_t *self = &the_qubie.wifi_monitor;
 static pcap_t *handle = NULL;
 static const byte *current_packet;
 static unsigned int wifi_channel_index = WIFI_CHANNEL_DEFAULT;
@@ -27,18 +26,6 @@ static unsigned int wifi_channel_index = WIFI_CHANNEL_DEFAULT;
  */
 
 //constructor
-wifi_monitor_t make_wifi_monitor(qubie_t *qubie){
-	wifi_monitor_t *wifi_monitor_struct=malloc(sizeof(struct wifi_monitor));
-	wifi_monitor_struct->monitor_booted = false;
-	wifi_monitor_struct->monitor_running = false;
-	wifi_monitor_struct->auto_hopping = WIFI_AUTO_HOPPING_DEFAULT;
-	wifi_monitor_struct->keyed_hash = make_keyed_hash();
-	//wifi_monitor_struct->channels = wifi_channels;
-	//design by default start at the begining of the spectrum
-	//wifi_monitor_struct->frequency = WIFI_FREQUENCY_DEFAULT;
-	//wifi_monitor_struct->qubie = qubie;
-	return *wifi_monitor_struct;
-};
 
 // ====================================================================
 // @bon PRIVATE

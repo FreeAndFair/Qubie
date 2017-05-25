@@ -6,7 +6,6 @@
 #include <stdbool.h>
 
 //constructor
-wifi_monitor_t make_wifi_monitor(qubie_t *qubie);
 
 // ====================================================================
 // bon QUERIES

@@ -14,8 +14,10 @@ extern qubie_t the_qubie;
 extern bt_client_t the_bt_client;
 
 //helper functions
-// design to init pseudo random test seeds.
-// design does not effect hash key. NOT SECURE FOR HASH KEY SEEDS!!!
+
+/*	to init pseudo random test seeds.
+  	does not effect hash key. NOT SECURE FOR HASH KEY SEEDS!!!
+ */
 /*@	requires !randoms_initiated;
    	ensures randoms_initiated;
    	assigns \nothing;
@@ -58,7 +60,7 @@ void NormalTest(){
 	shut_down();
 };
 
-//TBD --include multiple subscribe/unsubscribe and multiple options of detecting devices on differnt frequencies
+//TBD --include multiple subscribe/unsubscribe and multiple options of detecting devices on different frequencies
 //TODO expand
 // @scenario
 void FullTest(){
@@ -77,8 +79,7 @@ void __PcapTest(){
 //design implemented by NormalTest and setting #define ENCRYPTED false
 // @scenario
 void UnencryptedTest(){
-	//@assert(false);
-	assert(false);
+	//@ assert bottom: false;
 };
 
 int main(void){
