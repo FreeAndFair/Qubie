@@ -27,7 +27,7 @@ void __write_log_entry_to_file( log_entry_t the_entry){
    	ensures \valid_read(\result);
    	assigns \nothing;
  */
-char const *make_log_message(message_t message_type, void *message_val, qubie_time_t message_time){
+char const *make_log_message(message_t message_type, void *message_val, time_t message_time){
 	int buff_size = MAX_MESSAGE_LEN;
 	char *buff = malloc(sizeof(char) * buff_size);
 	switch((int)message_type){
@@ -71,11 +71,11 @@ char const *make_log_message(message_t message_type, void *message_val, qubie_ti
  */
 log_entry_t make_log_entry(message_t message_type, void* message_val){
 	log_entry_t *log_entry_struct = malloc(sizeof(struct log_entry));
-	qubie_time_t message_time = current_time(NULL);
+	time_t message_time = current_time(NULL);
 	char const *message = make_log_message(message_type, message_val, message_time);
 	memcpy((char *)log_entry_struct->message, message, sizeof(char[MAX_MESSAGE_LEN]));
 	free((char *)message);
-	*(qubie_time_t *)&log_entry_struct->time = message_time;
+	*(time_t *)&log_entry_struct->time = message_time;
 	return *log_entry_struct;
 };
 
@@ -115,7 +115,7 @@ bool logged( message_t message_type, void* message_val){
 };
 
 //@ assigns \nothing;
-qubie_time_t current_time(qubie_time_t *seconds){
+time_t current_time(time_t *seconds){
 	return time((time_t *)seconds);
 };
 

@@ -45,6 +45,7 @@ wp:
 wp-verbose-report:
 	frama-c  -wp-verbose 0 $(FRAMA_C_FLAGS) -then -report 
 
+#requires additional provers to be installed
 wp-all-provers:
 	frama-c  -wp -wp-rte -wp-prover cvc4,z3,yices,alt-ergo $(FRAMA_C_FLAGS)
 
@@ -54,6 +55,7 @@ aorai:
 gui:
 	frama-c-gui  $(FRAMA_C_FLAGS)
 
+#Leior May 2017: the following BONc typechecks have not been tested yet
 typecheck-bonc: typecheck-informal typecheck-formal \
 	typecheck-static typecheck-dynamic typecheck-consistency
 
@@ -73,6 +75,6 @@ typecheck-dynamic:
 	bonc -tc -i -ci  $(INFORMAL_BON_FILES) $(DYNAMIC_MODEL_FILES)
 
 clean:
-	rm -f *.o
+	rm -f *.o qubie_main
 
 

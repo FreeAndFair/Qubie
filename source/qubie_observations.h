@@ -6,7 +6,7 @@
 qubie_observations_t make_qubie_observations();
 
 contact_record_t *make_contact_record(const device_id_t device_id,
-								const qubie_time_t contact_time,
+								const time_t contact_time,
 								const rssi_t rssi,
 								const frequency_t frequency
 								);

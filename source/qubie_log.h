@@ -19,7 +19,7 @@ bool log_empty();
 bool logged( message_t message_type, void* message_val);
 
 
-qubie_time_t current_time(qubie_time_t *seconds);
+time_t current_time(time_t *seconds);
 
 // ====================================================================
 // bon COMMANDS

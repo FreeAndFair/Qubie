@@ -23,23 +23,14 @@ extern bt_client_t the_bt_client;
 	logic monitor_state_t the_logical_wifi_monitor_state;
 	logic bool logical_initialized;
 
-	//@design logically structure observations as an array (even if it is implemented as a file)
-	//logic contract_record_t observations_array[MAX_LOGIC_SIZE];
-	//predicate observations_array_initialized: \forall int i: 0<= i < MAX_LOGIC_SIZE ==> observations_array[i] == \null;
-	//global invariant observations_array_initialized_at_init: \at(observations_array_initialized,Init);
-
-	// @design in order to init pseudo random test seeds an init function must be called.
 	logic bool randoms_initiated;
-
-	// @design initialization needed in order to begin other parts of the boot stage
-
 
 	//@design: use these variables to implement the logic of the publish/published and log/logged contracts
 	logic contact_record_t the_last_contact_record;
 	logic message_t the_last_log_entry_message_type;
 	logic void  * the_last_log_entry_message_val;
 
-	//@design keep logical copy of bt_client state to verify the state
+	//@design: keep logical copy of bt_client state to verify the state
 	logic bool bt_communicator_polled;
 	logic state_t bt_client_qubie_state;
 	logic bool bt_client_subscribed;
@@ -74,6 +65,8 @@ extern bt_client_t the_bt_client;
 // TODO does this need to be defined here? "The keyed hash is never changed after the WiFi monitor starts running.",
 
 
+//Leior May 2017: it appears as though global invariants aren't supported in frama-c yet
+//TODO find another way to organize the init state
 
 //@	global invariant the_logical_qubie_state: the_qubie_state == the_qubie.state;
 //@	global invariant randoms_not_initiated_at_start: \at(!randoms_initiated, Init);

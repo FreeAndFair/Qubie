@@ -54,7 +54,7 @@ qubie_observations_t make_qubie_observations(const char *filename){
    	assigns \nothing;
  */
 contact_record_t *make_contact_record( device_id_t const device_id,
-								qubie_time_t const contact_time,
+								time_t const contact_time,
 								const rssi_t rssi,
 								const frequency_t frequency
 								){
@@ -62,7 +62,7 @@ contact_record_t *make_contact_record( device_id_t const device_id,
 	memcpy((device_id_t *)&contact_record_struct->device_id, &device_id,sizeof(struct device_id));
 	//design device_id is only used in the context of the contact record
 	//free((void *)&device_id);// TBD does this need to be freed?
-	*(qubie_time_t *)&contact_record_struct->contact_time = contact_time;
+	*(time_t *)&contact_record_struct->contact_time = contact_time;
 	*(rssi_t *)&contact_record_struct->rssi = rssi;
 	*(frequency_t *)&contact_record_struct->frequency = frequency;
 	return contact_record_struct;

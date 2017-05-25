@@ -1,4 +1,4 @@
-
+//programmable default configurations for setting up qubie
 
 
 #ifndef QUBIE_DEFAULTS
@@ -11,41 +11,35 @@
 
 #define TEST_MODE true
 //change to false for unencrypted test mode
-#define ENCRYPTED_DEFAULT true //true
+#define ENCRYPTED_DEFAULT true
 //default value for wifi monitor auto hopping state
 #define WIFI_AUTO_HOPPING_DEFAULT true
 
-//in test mode there is an option to read packets from a file instead of a live wifi interface
-//design uncomment the below to read from file (test mode only)
+/*	in test mode there is an option to read packets from a file instead of a live wifi interface
+	uncomment the below to read from file (test mode only)
+	comment the line below to retrieve packets from a file in test mode
+ */
 #define PCAP_TEST_FILE "test.pcap"
 
-//design unremark in order to test with a specific seed
+//design uncomment in order to test with a specific seed
 //#define RANDOM_SEED 1
 
 //design all times listed in seconds but actual tests will be sped up 1000x
 //to avoid infinite loop set max number of run loop iterations before shutting down.
 //design only relevant in test mode
 #define MAX_TEST_ITERATIONS 15*60*60 //15 hours
-//design the amount of time to wait in each wifi sniffing interval
-#define WIFI_PAUSE_TIME 5 //5 seconds
-
-//TODO model voter related intervals according to poisson distribution
-
-//design average interval between voters arriving
-//for exponential distribution of intervals
-//which results in poisson distribution of voters
-#define VOTER_ARRIVAL_INTERVAL (10*60) //10 minutes
-
-
 
 // ====================================================================
 
-//design time to wait while snifing packets on a given freq
+//design time to wait while sniffing packets on a given frequency
 #define WIFI_TIMEOUT 5000 //5 seconds
-//design max number of packets to intercept on a given freq in a given interval
+//design max number of packets to intercept on a given frequency in a given interval
 #define PACKET_COUNT_LIMIT 10 //10 packets
-//design a string to define a filter for the wifi device
-//unremark and set string to activate the filter
+
+/*	design a string to define a filter for the wifi device
+	unremark and set string to activate the filter
+	note: Leior this has been tested in pcap_test but has not yet been implemented in the regular flow
+ */
 //#define WIFI_FILTER_STR ""
 
 /* channels 12 and 13 are not really in use in the us but they are added because they are used in other countries
@@ -66,7 +60,7 @@
 }
 //default value for starting wifi frequency (MHz)
 #define NUM_WIFI_CHANNELS 68
-//TODO verify WIFI_CHANNEL_DEFAULT < NUM_WIFI_CHANNELS
+//0 <= WIFI_CHANNEL_DEFAULT < NUM_WIFI_CHANNELS
 #define WIFI_CHANNEL_DEFAULT 0
 
 //the maximum length of a log message (including null terminator)
