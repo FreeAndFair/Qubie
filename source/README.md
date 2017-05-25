@@ -1,3 +1,13 @@
+Updates
+===
+
+* 25 May 2016
+BTLE Client has not been implemented, it is currently a stub.
+Wifi Monitor can only read packets from a file. in order to test real usage it must be run in an environment that can receive wireless packets.
+  
+
+
+
 Compiling the source code
 ===
 
