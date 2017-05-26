@@ -143,25 +143,25 @@ component
 		
 		boot_monitor 
 			require 
-				not booted;
+				not monitor_booted;
 			ensure
-				booted;
+				monitor_booted;
 				keyed_hash.set;
 				qubie.log.logged(Current);
 			end
 		start_monitor
 			require
-				booted;
-				not running;
+				monitor_booted;
+				not monitor_running;
 			ensure
-				running;
+				monitor_running;
 				qubie.log.logged(Current);
 			end
 		stop_monitor
 			require
-				running;
+				monitor_running;
 			ensure
-				not running; 
+				not monitor_running; 
 				qubie.log.logged(Current);
 			end
 		set_frequency 
