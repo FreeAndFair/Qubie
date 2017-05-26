@@ -14,7 +14,7 @@ void SimpleTest();
 // scenario
 void NormalTest();
 
-//TBD --include multiple subscribe/unsubscribe and multiple options of detecting devices on differnt frequencies
+//TBD --include multiple subscribe/unsubscribe and multiple options of detecting devices on different frequencies
 // scenario
 void FullTest();
 

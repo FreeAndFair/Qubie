@@ -12,7 +12,7 @@ component
 	object QUBIE
 	object BLUETOOTH_COMMUNICATOR
 	--qubie is powered up
-	--TODO "1"
+	QUBIE calls power_on "1"
 	--qubie begins booting scenario
 	QUBIE calls booting "2"
 	--qubie begins running
@@ -21,7 +21,6 @@ component
 	BLUETOOTH_COMMUNICATOR calls QUBIE "4" 
 	--qubie is powered off
 	QUBIE calls power_off "5"
-	--TODO all states can transition to final state
 end	
 
 dynamic_diagram QUBIE_INITIALIZATION
@@ -63,7 +62,7 @@ component
 	object FREQUENCY
 	
 	WIFI_MONITOR calls KEYED_HASH "1"
-	WIFI_MONITOR calls FREQUENCY "2" --TODO is this right?
+	WIFI_MONITOR calls FREQUENCY "2" 
 	QUBIE calls WIFI_MONITOR "3"
 end
 
@@ -110,5 +109,3 @@ component
 	QUBIE calls LOG "5"
 end
 	
---TODO QUBIE_STOP (power off: log and flush)
---TODO QUBIE_PUBLISH_LOG	

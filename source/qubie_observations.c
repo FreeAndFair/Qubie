@@ -6,7 +6,6 @@
 #include "qubie_observations.h"
 #include "qubie_log.h"
 #include "qubie_keyed_hash.h"
-//#include <sodium.h> //design for converting mac/key arrays to strings with rawToChar
 #include <stddef.h>
 #include <stdbool.h>
 #include <stdlib.h>
@@ -16,35 +15,23 @@
 
 //globals
 extern qubie_t the_qubie;
-static qubie_observations_t *self = &the_qubie.observations;
 
 //helper functions
 //design format: device,time,rssi,frequency
 /*@ ensures the_last_contact_record == the_contact_record;
-   	assigns *self->observations_fp;
+   	assigns *the_qubie.observations.observations_fp;
  */
 void __write_contact_record_to_file( contact_record_t the_contact_record){
-	fprintf(self->observations_fp, "%s,%lu,%d,%d\n",
+	fprintf(the_qubie.observations.observations_fp, "%s,%lu,%d,%d\n",
 			the_contact_record.device_id.identifier_string,
 			the_contact_record.contact_time,
 			the_contact_record.rssi,
 			the_contact_record.frequency
 			);
-	fflush(self->observations_fp);
+	fflush(the_qubie.observations.observations_fp);
 };
 
 //constructors
-qubie_observations_t make_qubie_observations(const char *filename){
-	qubie_observations_t *observations_struct = malloc(sizeof(struct observations));
-	observations_struct->size = 0;
-	//*(contact_record_t *)&observations_struct->last=NULL;
-	observations_struct->observations_fp = fopen(filename, "w");
-	//design print header file
-//	TBD the best way to sync header with data
-	fprintf(observations_struct->observations_fp, "device,time,rssi,frequency\n");
-	fflush(observations_struct->observations_fp);
-	return *observations_struct;
-};
 
 /*@ requires true;
    	ensures \result->device_id == device_id;
@@ -54,15 +41,14 @@ qubie_observations_t make_qubie_observations(const char *filename){
    	assigns \nothing;
  */
 contact_record_t *make_contact_record( device_id_t const device_id,
-								qubie_time_t const contact_time,
+								time_t const contact_time,
 								const rssi_t rssi,
 								const frequency_t frequency
 								){
 	contact_record_t *contact_record_struct = malloc (sizeof(struct contact_record));
 	memcpy((device_id_t *)&contact_record_struct->device_id, &device_id,sizeof(struct device_id));
 	//design device_id is only used in the context of the contact record
-	//free((void *)&device_id);// TBD does this need to be freed?
-	*(qubie_time_t *)&contact_record_struct->contact_time = contact_time;
+	*(time_t *)&contact_record_struct->contact_time = contact_time;
 	*(rssi_t *)&contact_record_struct->rssi = rssi;
 	*(frequency_t *)&contact_record_struct->frequency = frequency;
 	return contact_record_struct;
@@ -84,46 +70,29 @@ device_id_t make_device_id(mac_t raw_identifier){
 	return *device_id_struct;
 };
 
-
-
 // ====================================================================
 // @bon QUERIES
 // ====================================================================
 
-/*@ ensures (0 == self->size) == \result;
+/*@ ensures (0 == the_qubie.observations.size) == \result;
    	assigns \nothing;
  */
 bool observations_empty(){
-	//assumes linked list format
-	return 0 == self->size;
+	return 0 == the_qubie.observations.size;
 };
 
-
-//design this function is never used. it is only to fulfill a contract.
-//TODO remove once predicate logical_observations_contains is verified
-/*@
-   	ensures \result <==> logical_observations_contains(the_contact_record);
-   	assigns \nothing;
-
- */
-bool observations_contains( contact_record_t the_contact_record){
-	assert(false);
-	return(false);
-};
-
-
-
+// ====================================================================
+// @bon COMMANDS
+// ====================================================================
 
 /*@
-   	ensures \old(self->size) + 1 == self->size;
+   	ensures \old(the_qubie.observations.size) + 1 == the_qubie.observations.size;
    	ensures the_last_contact_record == the_contact_record;
    	assigns \nothing;
  */
 void add_contact_record( contact_record_t the_contact_record){
-	//free_contact_record(self.last);
-	//self.last = the_contact_record;
 	__write_contact_record_to_file(the_contact_record);
-	self->size++;
+	the_qubie.observations.size++;
 };
 
 

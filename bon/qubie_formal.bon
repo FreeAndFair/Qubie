@@ -39,7 +39,7 @@ component
 					state = booting;
 					action_published(state);	
 				end
-			start_running -- : Void 
+			start_running
 				require
 					booting
 				ensure
@@ -75,14 +75,14 @@ component
 				
 	    	legal_update_states : SET[QUBIE_STATE]
 	    		ensure
-	    			Result = {booting, running, stopped, powered_off}; --TODO Reesult is a subset of...
+	    			Result = {booting, running, stopped, powered_off}; --TODO Result is a subset of...
 	    		end
 	    end
 
 		effective class QUBIE
 		inherit QUBIE_INTERFACE
 		feature
-			--TODO do I need to define the ">" operator for QUBIE_STATE?
+			--bon does not support the ">" opperator for values such as QUBIE_STATE but the meaning should be intuitive
 			observations : OBSERVATIONS
 				require state > booting end	
 			wifi_monitor : WIFI_MONITOR
@@ -90,7 +90,7 @@ component
 			bt_communicator : BLUETOOTH_COMMUNICATOR
 				require state > booting end
 			effective log : LOG
-			initialized : BOOLEAN --TODO get consensus on syntax
+			initialized : BOOLEAN 
 				ensure 
 					Result = log.empty and observations.empty;
 				end
@@ -133,42 +133,41 @@ static_diagram QUBIE_MONITOR
 component
 	class MONITOR
 	feature 
-		wifi_booted : BOOLEAN
-		wifi_running : BOOLEAN
+		monitor_booted : BOOLEAN
+		monitor_running : BOOLEAN
 		auto_hopping : BOOLEAN
 		keyed_hash : KEYED_HASH
-		frequency_range : SET[FREQUENCY] --TODO change to "channels" 
+		channels : SET[FREQUENCY] 
 		frequency : FREQUENCY
 		qubie : QUBIE
 		
-		boot_wifi --TODO change to boot_monitor etc.
+		boot_monitor 
 			require 
-				not booted;
+				not monitor_booted;
 			ensure
-				booted;
+				monitor_booted;
 				keyed_hash.set;
 				qubie.log.logged(Current);
 			end
-		start_wifi
+		start_monitor
 			require
-				booted;
-				not running;
+				monitor_booted;
+				not monitor_running;
 			ensure
-				--delta {Current, qubie.observations, qubie.log};
-				running;
+				monitor_running;
 				qubie.log.logged(Current);
 			end
-		stop_wifi
+		stop_monitor
 			require
-				running;
+				monitor_running;
 			ensure
-				not running; 
+				not monitor_running; 
 				qubie.log.logged(Current);
 			end
 		set_frequency 
 			-> the_frequency : FREQUENCY
 			require
-				the_frequency member_of frequency_range;
+				the_frequency member_of channels;
 			ensure 
 				delta {frequency, qubie.log};
 				frequency=the_frequency; 
@@ -183,14 +182,14 @@ component
 			end
 		report_detected_device
 			-> the_mac_address : VALUE
-			-> the_frequency : FREQUENCY --TODO add in source files
+			-> the_frequency : FREQUENCY 
 			-> the_signal_strength : VALUE
 			ensure
 				delta {qubie.observations, qubie.log};
 				qubie.observations.contains(CONTACT_RECORD.make(keyed_hash, the_mac_address, the_signal_strength));
 				qubie.log.logged(Current);	
 			end
-		--TBD should we document unsupported packets?
+		--TODO log unsupported packets
 		--TODO the keyed hash is never changed after running
 	end
 	
@@ -240,7 +239,7 @@ component
 			require
 				not subscribed;
 			ensure
-				delta {bt_client, subscribed}; --TODO? is this accurate taking into account that the bt_client, once subscribed, can modify qubie states etc.?
+				delta {bt_client, subscribed};
 				bt_client=the_bluetooth_client;
 				subscribed;
 			end
@@ -256,7 +255,6 @@ component
 			ensure 
 				action_published(the_state);
 			end
-			--TODO ensure if subscribed -> *notify client* end
 	end
 	--TODO class PHYSICAL_COMMUNICATOR inherit COMMUNICATOR for buttons+leds
 	--TODO TOUCH_SCREEN inherit COMMUNICATOR
@@ -276,8 +274,6 @@ component
 			end
 		update_qubie_state
 			the_state : QUBIE_STATE
-			--require
-				--bt_communicator.bt_client = Current; --TODO? is this obvious?
 			ensure 
 				bt_communicator.qubie_state = the_state;
 				published(the_state); 
@@ -366,7 +362,6 @@ component
 	class LOG persistent
 	inherit LIST[LOG_ENTRY] 
 	feature
---		entry++ : LOG_ENTRY {^LIST.element} --rename element as entry
 		current_time : VALUE
 		empty : BOOLEAN
 			ensure Result = (size = 0); end

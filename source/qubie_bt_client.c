@@ -19,12 +19,6 @@ static bt_client_t *self = &the_bt_client;
    	assigns self, the_bt_client;
  */
 bt_client_t *make_bt_client(bt_communicator_t *bt_communicator){
-	/*
-	bt_client_t *bt_client_struct = malloc(sizeof(struct bt_client));
-	bt_client_struct->bt_communicator = bt_communicator;
-	bt_client_struct->qubie_state = bt_communicator_qubie_state();
-	return *bt_client_struct;
-	*/
 	the_bt_client.bt_communicator = bt_communicator;
 	the_bt_client.qubie_state = bt_communicator_qubie_state();
 	return &the_bt_client;
@@ -37,11 +31,11 @@ bt_client_t *make_bt_client(bt_communicator_t *bt_communicator){
 
 //long name to ensure it is not confused with qubie's method
 /*@ requires true;
-   	ensures \result == self->bt_communicator;
+   	ensures \result == the_bt_client.bt_communicator;
    assigns \nothing;
  */
 bt_communicator_t *bt_client_communicator(){
-	return self->bt_communicator;
+	return the_bt_client.bt_communicator;
 };
 
 //ack that a qubie state update has been received
@@ -51,7 +45,7 @@ bt_communicator_t *bt_client_communicator(){
    	assigns \nothing;
  */
 bool published( state_t the_state){
-	return self->qubie_state == the_state;
+	return the_bt_client.qubie_state == the_state;
 };
 
 // ====================================================================
@@ -61,7 +55,7 @@ bool published( state_t the_state){
    assigns \nothing;
  */
 void publish_from_bt_communicator( state_t the_state){
-	self->qubie_state = the_state;
+	the_bt_client.qubie_state = the_state;
 };
 
 /*@ requires the_state == STOPPED ^^ the_state == POWERED_OFF; //design: legal states
@@ -75,20 +69,20 @@ void bt_client_update_qubie_state( state_t the_state){
 
 /*@ requires !bt_client_subscribed;
    ensures bt_client_subscribed;
-   assigns  the_bt_client, self, self->bt_communicator->subscribed;
+   assigns  the_bt_client, self, the_bt_client.bt_communicator->subscribed;
  */
 void create_and_subscribe_bt_client(){
 	bt_client_t *the_bt_client = make_bt_client(bt_client_communicator());
 	subscribe(the_bt_client);
 };
 
-//design allow bt_client to do whatever is in it's spec.
+//design allow bt_client to do whatever is in its spec.
 /*@
-   	assigns self->bt_communicator->subscribed, self->bt_communicator->bt_client, the_qubie.state;
+   	assigns the_bt_client.bt_communicator->subscribed, the_bt_client.bt_communicator->bt_client, the_qubie.state;
  */
 void poll_bt_client(){
 	//design chance determined in parts per 10000 (when in relevant state)
-	//TBD move these to defaults for better control
+	//TBD move these to defaults for better control (if needed)
 	uint subscribe_chance = 5000;
 	uint unsubscribe_chance = 500;
 	uint stop_chance = 2;

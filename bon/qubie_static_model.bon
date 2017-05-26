@@ -14,7 +14,6 @@ component
 	WIFI_MONITOR client KEYED_HASH
 	BLUETOOTH_COMMUNICATOR client QUBIE
 	BLUETOOTH_CLIENT client BLUETOOTH_COMMUNICATOR 
-	--TODO how are observations retrieved from qubie? do they need to be interfaced? persistent?
 end
 	
 static_diagram QUBIE_CONTACT
@@ -36,8 +35,6 @@ component
 	KEYED_HASH client HASH
 
 end
-
---TODO do I need to mention LOG_ENTRY?
 
 static_diagram QUBIE_PERSISTENCE
 	-- This diagram shows which classes are persistent.

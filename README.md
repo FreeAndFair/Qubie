@@ -1,7 +1,7 @@
 Qubie
 ===
 
-*Qubie*, also known as the Polling Queue Minder, is a part of the Free
+*Qubie*, also known as the Poll Queue Monitor, is a part of the Free
 & Fair suite of products. It is a compact polling place monitoring
 system that attempts to estimate the wait time for casting a vote. It
 can be used by jurisdictions to gather data about polling place usage
@@ -144,6 +144,16 @@ and frameworks:
 * [Pcapy] [7], for wireless packet inspection
 * [Bleno] [8], for Bluetooth Low Energy communication
 
+Source Code
+===
+
+The source code is currently under development for use on an embedded system with a minimal OS (e.g. rtos) and depends onf the following libraries, tools, and frameworks:
+
+* [E-ACSL] [4]
+* [libpcap] [9]
+* [libsodium] [10]
+ 
+
 [1]: http://research.microsoft.com/en-us/projects/contracts/  "Code Contracts library for .NET"
 
 [2]: http://www.jmlspecs.org/  "Java Modeling Language (JML)"
@@ -159,4 +169,8 @@ and frameworks:
 [7]: https://github.com/CoreSecurity/pcapy "Pcapy"
 
 [8]: https://github.com/sandeepmistry/bleno "Bleno"
+
+[9]: https://github.com/the-tcpdump-group/libpcap "libpcap"
+
+[10]: https://github.com/jedisct1/libsodium "libsodium"
 

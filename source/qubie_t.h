@@ -24,9 +24,9 @@ typedef enum {
 typedef unsigned char byte;
 typedef unsigned int uint;
 
-//minimum valid length of radiotap header
+//minimum valid length of radiotap (rtap) header
 #define MIN_RTAP_LEN 18
-//datalink filed value for packets with rtap headers
+//datalink field value for packets with rtap headers
 #define RADIOTAP_DATALINK_VAL 127
 
 //mac address is 48 bits (or 6 bytes) until we decide to support EUI-64
@@ -34,37 +34,22 @@ typedef unsigned int uint;
 typedef unsigned char mac_t[MAC_SIZE];
 //design string representation of (hashed)mac is 2chars per byte + 1 char for NULL termination
 #define MAC_STRING_LEN (MAC_SIZE * 2 + 1)
-/* doesn't work in C
- * typedef struct mac {
- * 	char& operator[](int i) { return byte[i]; }
- * 	unsigned char bytes[MAC_SIZE];
- * } mac_t;
- */
 
-//hash key is 256 bits (or 64 bytes) in python hashlib.md5
-#define KEY_SIZE 64 //TODO should it be 128? check options in C
+#define KEY_SIZE 64
 typedef unsigned char qubie_key_t[KEY_SIZE];
-/* doesn't work in C
- * typedef struct key {
- * 	char& operator[](int i) { return byte[i]; }
- * 	unsigned char bytes[KEY_SIZE];
- * } qubie_key_t;
- */
+
 
 //frequencies are in increments of 1MHz at least up to 5875MHz (less than 2^16 MHz)
 typedef unsigned int frequency_t;
 
 //RSSI is defined between 0-255 though some devices measure on scale of 0-60 or 0-100
-//TODO perhaps we need to switch to dBm
 typedef unsigned char rssi_t;
 
-//only minimal usage of time is needed. it's enough to count seconds since the epoch
-typedef unsigned long qubie_time_t; //TODO use time_t
-
-// a list of possible qubie states
-// design the order of the states is important.
-// with the exception of POWER_OFF which is a final state and can occur from any other state
-// each state moves to the next state in order
+/* 	a list of possible qubie states
+ 	design the order of the states is important.
+ 	with the exception of POWER_OFF which is a final state and can occur from any other state
+ 	each state moves to the next state in order
+ */
 typedef enum {START, POWERED_ON, BOOTING, RUNNING, STOPPED, POWERED_OFF} state_t;
 
 typedef struct device_id {
@@ -74,7 +59,7 @@ typedef struct device_id {
 
 typedef struct contact_record {
 	device_id_t const device_id;
-	const qubie_time_t contact_time;
+	const time_t contact_time;
 	const rssi_t rssi;
 	const frequency_t frequency;
 } contact_record_t;
@@ -88,22 +73,17 @@ typedef struct observations {
 
 typedef struct log_entry {
 	char const message[MAX_MESSAGE_LEN];
-	const qubie_time_t time;
-	//const message_t message_type;
-	//void *message_val; //TBD const?
+	const time_t time;
 } log_entry_t;
 
 typedef struct qubie_logger {
 	unsigned int size;
-	//log_entry_t* last_entry;
 	FILE *log_fp;
 }qubie_logger_t;
 
-//typedef void* hash_t; //TODO
 typedef struct keyed_hash {
 	bool set;
 	qubie_key_t key;
-	//hash_t hash;
 }keyed_hash_t;
 
 typedef struct bt_client bt_client_t;
@@ -111,20 +91,17 @@ typedef struct bt_client bt_client_t;
 typedef struct qubie qubie_t;
 
 typedef struct wifi_monitor {
-	bool wifi_booted;
-	bool wifi_running;
+	bool monitor_booted;
+	bool monitor_running;
 	bool auto_hopping;
 	keyed_hash_t keyed_hash;
-	frequency_t const frequency_range[NUM_WIFI_CHANNELS]; // FREQUENCY_WIFI_CHANNELS;
+	frequency_t const channels[NUM_WIFI_CHANNELS]; // FREQUENCY_WIFI_CHANNELS;
 	frequency_t frequency; // WIFI_FREQUENCY_DEFAULT;
-	//const qubie_t const *qubie; //pointer to qubie
 } wifi_monitor_t;
-//static const char *wifi_state_strings[] = {"booted", "running"};
 
 typedef struct bt_communicator {
 	bool subscribed;
 	bt_client_t *bt_client;
-	//const qubie_t *qubie; //TODO erase
 	state_t const legal_update_states[2]; //{STOPPED, POWERED_OFF};
 } bt_communicator_t;
 
@@ -145,7 +122,6 @@ typedef struct qubie {
 	wifi_monitor_t wifi_monitor;
 	// pointer to bluetooth communicator
 	bt_communicator_t bt_communicator;
-	// "qubie" querie just points to "this" so it is not needed here
 	state_t const legal_update_states[3]; //{RUNNING, STOPPED, POWERED_OFF};
 } qubie_t;
 #endif

@@ -1,3 +1,8 @@
+/*
+ * this file includes code used for the sake of testing interfaces with different wifi modules
+ * this module should only be needed in test mode
+ */
+
 
 #include "qubie_t.h"
 #include "qubie.acsl"
@@ -212,7 +217,7 @@ void pcap_test(){
 /*@	requires randoms_initiated;
    	requires TEST_MODE;
    	ensures the_qubie.observations.size == \old(the_qubie.observations.size) + 1;
-   	assigns the_qubie.observations, the_qubie.log;
+   	assigns \nothing;
  */
 void report_random_device(){
 	assert(TEST_MODE);
