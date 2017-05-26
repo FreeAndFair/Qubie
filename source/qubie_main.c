@@ -26,9 +26,9 @@ void init_random_number_generator(){
 	unsigned long seed;
 #ifdef RANDOM_SEED
 	seed = RANDOM_SEED;
+	printf("DEBUG - user defined random seed is: %lu\n", seed);
 #else
 	seed = (unsigned long) current_time(NULL);
-	printf("DEBUG - user defined random seed is: %lu", seed);
 #endif
 	srand(seed);
 };
