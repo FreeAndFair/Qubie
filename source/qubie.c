@@ -86,12 +86,7 @@ void __initialize_qubie(){
 
 
 //constructor
-qubie_t *make_qubie(){
-	__initialize_qubie();
-	return &the_qubie;
-};
 
-//TODO define predicates in acsl file
 
 // ====================================================================
 // @bon QUERIES
@@ -305,7 +300,7 @@ void run_loop(){
 	  	loop variant MAX_TEST_ITERATIONS - iterations;
 	 */
 	while (running() && iterations < MAX_TEST_ITERATIONS){
-		printf("DEBUG - iteration: %lu\n",iterations);
+		//printf("DEBUG - iteration: %lu\n",iterations);
 		poll_wifi_monitor();
 		poll_bt_communicator();
 		iterations++;

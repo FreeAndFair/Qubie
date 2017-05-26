@@ -76,7 +76,7 @@ void __boot_wifi_interface(){
 #endif
 	//enable monitor mode
 	pcap_set_rfmon(handle, 1);
-	//TBD set filters
+	//TBD set filters. if deemed necessary take code from wife_stub in #ifdef WIFI_FILTER_STR
 };
 
 /*@ requires wifi_interface_polled;
@@ -161,8 +161,14 @@ void __process_packet() {
 	report_detected_device(*smac_ptr, the_rssi, the_frequency);
 }
 
+/*	TODO
+ * 	The current method has a limit on the number of packets and a time limit to wait for each packet.
+ * 	This means that the maximum time on a single frequency is the product of the two numbers.
+ * 	A better way could be to have two counters: a time limit and a packet limit
+ * 	(and to exit once one of the counters elapses). this would give a max time of:
+ * 	 WIFI_TIMEOUT + PACKET_TIME_LIMIT instead of WIFI_TIMEOUT * PACKET_COUNT_LIMIT
+ */
 /*@ requires the_logical_wifi_monitor_state == MONITOR_RUNNING;
- 	//TODO change packet limit to time limit + limit on number of processed packets
    	ensures !wifi_interface_polled;
    	ensures \old(the_qubie.observations.size) <= the_qubie.observations.size <= \old(the_qubie.observations.size) + PACKET_COUNT_LIMIT;
    	assigns \nothing;

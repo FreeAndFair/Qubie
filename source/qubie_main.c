@@ -28,8 +28,8 @@ void init_random_number_generator(){
 	seed = RANDOM_SEED;
 #else
 	seed = (unsigned long) current_time(NULL);
+	printf("DEBUG - user defined random seed is: %lu", seed);
 #endif
-	printf("DEBUG - random seed is: %lu", seed);
 	srand(seed);
 };
 

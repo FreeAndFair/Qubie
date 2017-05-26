@@ -89,7 +89,7 @@ char const *hashed_string( bool encrypted, mac_t the_string){
  */
 qubie_key_t *create_random_key(){
 	unsigned char sodium_init_ret = sodium_init();
-	printf("DEBUG - sodium_init return val: %d\n", sodium_init_ret);
+	//printf("DEBUG - sodium_init return val: %d\n", sodium_init_ret);
 	//@assert(!sodium_init_ret);
 	assert(!sodium_init_ret);
 	qubie_key_t *key_buf = (qubie_key_t *)malloc(sizeof(qubie_key_t));

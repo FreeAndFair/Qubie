@@ -3,9 +3,6 @@
 #include "qubie_t.h"
 
 //constructor
-qubie_t *make_qubie();
-
-
 
 // ====================================================================
 // bon QUERIES

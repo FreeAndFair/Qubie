@@ -1,3 +1,8 @@
+/*
+ * this file includes code used for the sake of testing interfaces with different wifi modules
+ * this module should only be needed in test mode
+ */
+
 
 #include "qubie_t.h"
 #include "qubie.acsl"

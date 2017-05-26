@@ -19,12 +19,6 @@ static bt_client_t *self = &the_bt_client;
    	assigns self, the_bt_client;
  */
 bt_client_t *make_bt_client(bt_communicator_t *bt_communicator){
-	/*
-	bt_client_t *bt_client_struct = malloc(sizeof(struct bt_client));
-	bt_client_struct->bt_communicator = bt_communicator;
-	bt_client_struct->qubie_state = bt_communicator_qubie_state();
-	return *bt_client_struct;
-	*/
 	the_bt_client.bt_communicator = bt_communicator;
 	the_bt_client.qubie_state = bt_communicator_qubie_state();
 	return &the_bt_client;
@@ -82,13 +76,13 @@ void create_and_subscribe_bt_client(){
 	subscribe(the_bt_client);
 };
 
-//design allow bt_client to do whatever is in it's spec.
+//design allow bt_client to do whatever is in its spec.
 /*@
    	assigns the_bt_client.bt_communicator->subscribed, the_bt_client.bt_communicator->bt_client, the_qubie.state;
  */
 void poll_bt_client(){
 	//design chance determined in parts per 10000 (when in relevant state)
-	//TBD move these to defaults for better control
+	//TBD move these to defaults for better control (if needed)
 	uint subscribe_chance = 5000;
 	uint unsubscribe_chance = 500;
 	uint stop_chance = 2;

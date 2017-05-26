@@ -10,21 +10,11 @@
 #include <stdlib.h>
 
 //globals
-//design  internal use
 extern qubie_t the_qubie;
-//static bt_communicator_t *self = &the_qubie.bt_communicator;
 //design  export to bt_client which does not have direct access to the_qubie
 bt_communicator_t *the_communicator = &the_qubie.bt_communicator;
 
 //constructor
-bt_communicator_t *make_bt_communicator(qubie_t *qubie){
-	bt_communicator_t *bt_communicator_struct = malloc(sizeof(struct bt_communicator));
-	bt_communicator_struct->subscribed = false;
-	bt_communicator_struct->bt_client = NULL;
-	//bt_communicator_struct->qubie = qubie;
-	//TODO bt_communicator_struct->legal_update_states=bt_communicator_legal_update_states;
-	return bt_communicator_struct;
-};
 
 // ====================================================================
 // @bon QUERIES
@@ -42,9 +32,6 @@ bt_communicator_t *make_bt_communicator(qubie_t *qubie){
 state_t bt_communicator_qubie_state(){
 	return state();
 };
-
-//pointer to the qubie module that is connected to this communicator
-// moved to central location: qubie_t qubie();
 
 // pointer to qubie's log, a list of log entries with some added functionality
 /*@	ensures \result == &the_qubie.log;
