@@ -38,6 +38,9 @@ the "prototype" directory, uses a subset of this methodology.
 
 The TBD methodology is documented in several papers published by Joe
 Kiniry and his coauthors, available via http://www.kindsoftware.com/.
+In particular, read "Secret Ninja Formal Methods" and "A 
+Verification-centric Software Development Process for Java", both of
+which were written with Dan Zimmerman.
 
 In general, a system is comprised of:
 
