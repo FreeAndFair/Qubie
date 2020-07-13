@@ -20,15 +20,15 @@ To compile the source code with the provided make file you will need to perform 
 
 for example on linux ubuntu:
 
-	```
-       sudo apt-get update 
-       sudo apt-get upgrade
-       sudo apt-get install libsodium-dev
-       sudo apt-get install libpcap-dev
-       cd <qubie_repo_path>/source
-       mkdir install
-       make main
-	```
+```bash
+sudo apt-get update 
+sudo apt-get upgrade
+sudo apt-get install libsodium-dev
+sudo apt-get install libpcap-dev
+cd <qubie_repo_path>/source
+mkdir install
+make main
+```
 	
 * Instead of installing the libraries you may copy the source files into the install directory.
 
